@@ -64,9 +64,16 @@
 }
 
 @media print {
-  /* Use the visibility trick to isolate the printable area */
+  @page {
+    margin: 0;
+    size: auto;
+  }
+
   body {
     visibility: hidden;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -77,33 +84,42 @@
   }
   
   #printable-receipt {
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100%;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
     margin: 0 !important;
-    padding: 20px !important;
+    padding: 40px !important;
+    background: white !important;
+    box-shadow: none !important;
   }
 
-  /* Force display of the portal container if it's used */
-  [data-radix-portal] {
-    visibility: visible !important;
-  }
-
-  /* Reset layout constraints that might hide content */
-  [role="dialog"] {
+  /* Aggressively reset Radix/Dialog containers during print to prevent shifts and blank pages */
+  [data-radix-portal],
+  [role="dialog"],
+  div[data-state] {
     position: static !important;
-    width: auto !important;
+    transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
     max-width: none !important;
+    height: auto !important;
     max-height: none !important;
-    overflow: visible !important;
+    visibility: visible !important;
+    background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    background: transparent !important;
-    padding: 0 !important;
   }
 
-  /* Remove any scrollbars or fixed heights from parents */
+  /* Hide the modal overlay and close button completely */
+  [data-radix-overlay],
+  .fixed.inset-0.bg-black\/80,
+  button.absolute.right-4.top-4 {
+    display: none !important;
+  }
+
+  /* Ensure no elements have scrollbars or limited height */
   .overflow-y-auto,
   [class*="overflow-"],
   [class*="max-h-"] {
@@ -111,4 +127,7 @@
     max-height: none !important;
     height: auto !important;
   }
+
+  /* Optional: Force the footer to the bottom of the content if needed, 
+     but standard flow is safer for single-page receipts. */
 }
