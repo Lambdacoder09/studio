@@ -354,7 +354,7 @@ export default function SalesPage() {
               Transaction record for invoice #{currentSale?.invoiceNumber}
             </DialogDescription>
           </DialogHeader>
-          <div className="p-0 overflow-y-auto max-h-[85vh]">
+          <div className="p-0 overflow-y-auto max-h-[85vh] print:overflow-visible print:max-h-none">
             <div id="printable-receipt" className="space-y-8 text-slate-900 bg-white">
               {/* Receipt Header */}
               <div className="flex flex-col items-center text-center space-y-3 pb-8 border-b-2 border-dashed border-slate-200">
