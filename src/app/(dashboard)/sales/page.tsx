@@ -347,18 +347,18 @@ export default function SalesPage() {
 
       {/* Receipt Dialog */}
       <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
-        <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden bg-white">
-          <DialogHeader className="sr-only">
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white">
+          <DialogHeader className="p-6 pb-0 sr-only">
             <DialogTitle>Sales Receipt</DialogTitle>
             <DialogDescription>
-              Detailed transaction record for invoice #{currentSale?.invoiceNumber}
+              Transaction record for invoice #{currentSale?.invoiceNumber}
             </DialogDescription>
           </DialogHeader>
-          <div className="p-8 overflow-y-auto max-h-[80vh]">
+          <div className="p-0 overflow-y-auto max-h-[85vh]">
             <div id="printable-receipt" className="space-y-8 text-slate-900 bg-white">
               {/* Receipt Header */}
               <div className="flex flex-col items-center text-center space-y-3 pb-8 border-b-2 border-dashed border-slate-200">
-                <div className="relative w-20 h-20 mb-2">
+                <div className="relative w-24 h-24 mb-2">
                    <Image 
                     src={businessLogo} 
                     alt="BizManager Logo" 
@@ -367,7 +367,7 @@ export default function SalesPage() {
                     data-ai-hint="business logo"
                   />
                 </div>
-                <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-900">BizManager Store</h2>
+                <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-900">BizManager Official Store</h2>
                 <div className="space-y-1">
                   <p className="text-[11px] font-medium text-slate-600 uppercase tracking-tight">123 Innovation Drive, Tech City, TC 90210</p>
                   <p className="text-[10px] text-slate-500">VAT ID: 98-76543210 • REG: 555-1234</p>
@@ -378,7 +378,7 @@ export default function SalesPage() {
               {/* Transaction Meta */}
               <div className="grid grid-cols-2 gap-4 text-xs font-mono py-4 border-b border-slate-100">
                 <div className="space-y-1.5">
-                  <p className="font-bold text-slate-900 underline decoration-slate-200 underline-offset-4">BILLING INFO</p>
+                  <p className="font-bold text-slate-900 underline decoration-slate-200 underline-offset-4 uppercase">Billing Details</p>
                   <p>INV: #{currentSale?.invoiceNumber}</p>
                   <p>DATE: {currentSale?.date && new Date(currentSale.date).toLocaleDateString()}</p>
                 </div>
@@ -391,7 +391,7 @@ export default function SalesPage() {
               {/* Items Table */}
               <div className="space-y-4">
                 <div className="grid grid-cols-12 text-[10px] font-black uppercase text-slate-400 px-1 border-b pb-1">
-                  <div className="col-span-6">Item Description</div>
+                  <div className="col-span-6">Description</div>
                   <div className="col-span-2 text-center">Qty</div>
                   <div className="col-span-2 text-right">Unit</div>
                   <div className="col-span-2 text-right">Total</div>
@@ -414,7 +414,7 @@ export default function SalesPage() {
               {/* Totals Section */}
               <div className="pt-8 border-t-2 border-dashed border-slate-200 space-y-3">
                 <div className="flex justify-between text-xs text-slate-500 font-medium">
-                  <span>Subtotal Amount</span>
+                  <span>Subtotal</span>
                   <span className="font-mono">${Number(currentSale?.totalAmount).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xs text-slate-500 font-medium">
@@ -423,7 +423,7 @@ export default function SalesPage() {
                 </div>
                 <Separator className="bg-slate-100" />
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-sm font-black uppercase tracking-widest text-slate-900">Total Payable</span>
+                  <span className="text-sm font-black uppercase tracking-widest text-slate-900">Total Due</span>
                   <span className="text-2xl font-black text-primary font-mono tracking-tighter">
                     ${Number(currentSale?.totalAmount).toFixed(2)}
                   </span>
@@ -433,11 +433,11 @@ export default function SalesPage() {
               {/* Payment Status */}
               <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 border-dashed space-y-2">
                 <div className="flex justify-between text-[10px] font-mono text-slate-500 uppercase font-bold">
-                  <span>Payment Status</span>
+                  <span>Status</span>
                   <span className="text-emerald-600">PAID IN FULL</span>
                 </div>
                 <div className="flex justify-between text-[9px] font-mono text-slate-400 uppercase">
-                  <span>Transaction Reference</span>
+                  <span>TX REF</span>
                   <span className="truncate max-w-[120px]">{currentSale?.id}</span>
                 </div>
               </div>
@@ -446,27 +446,27 @@ export default function SalesPage() {
               <div className="text-center space-y-6 pt-6">
                 <div className="flex flex-col items-center gap-1">
                    <div className="w-32 border-t border-slate-300"></div>
-                   <span className="text-[9px] uppercase font-bold text-slate-400 tracking-tighter">Manager Authorization</span>
+                   <span className="text-[9px] uppercase font-bold text-slate-400 tracking-tighter">Authorized Signature</span>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm font-black text-slate-900 italic tracking-tight">"Efficiency in every transaction."</p>
-                  <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Thank you for your business!</p>
+                  <p className="text-sm font-black text-slate-900 italic tracking-tight">"Your growth is our mission."</p>
+                  <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Thank you for visiting!</p>
                 </div>
                 <div className="flex justify-center pt-2">
                   <div className="bg-slate-100 px-3 py-1 rounded text-[9px] font-mono text-slate-500 uppercase">
-                    Generated by BizManager v1.0
+                    System Verified • BizManager v1.0
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <DialogFooter className="p-4 border-t bg-slate-50 gap-2 sm:justify-center">
+          <DialogFooter className="p-4 border-t bg-slate-50 gap-2 sm:justify-center print:hidden">
             <Button variant="outline" className="flex-1 max-w-[140px]" onClick={() => setIsReceiptOpen(false)}>
-              Back to Sales
+              Close
             </Button>
             <Button className="flex-1 max-w-[140px] bg-primary text-white gap-2" onClick={handlePrint}>
-              <Printer className="h-4 w-4" /> Print Document
+              <Printer className="h-4 w-4" /> Print Receipt
             </Button>
           </DialogFooter>
         </DialogContent>

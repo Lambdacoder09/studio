@@ -64,49 +64,82 @@
 }
 
 @media print {
-  /* Hide all elements on the page by default */
-  body * {
-    visibility: hidden !important;
+  /* Reset and hide main app UI */
+  html, body {
+    background: white !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
   }
 
-  /* Specifically show the receipt and its children */
-  #printable-receipt, 
+  /* Hide the entire app container and other dialogs */
+  body > *:not([data-radix-portal]) {
+    display: none !important;
+  }
+
+  /* Ensure the active portal is visible */
+  [data-radix-portal] {
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    background: white !important;
+  }
+
+  /* Target the dialog content directly */
+  [role="dialog"] {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+    transform: none !important;
+  }
+
+  /* Show the receipt and its content */
+  #printable-receipt {
+    visibility: visible !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100mm !important; /* Balanced for standard printers and thermal */
+    margin: 0 auto !important;
+    padding: 20px !important;
+    background: white !important;
+  }
+
   #printable-receipt * {
     visibility: visible !important;
   }
 
-  /* Position the receipt at the top left of the print page */
-  #printable-receipt {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    max-width: 80mm !important; /* Typical thermal printer width */
-    margin: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
+  /* Hide UI elements within the dialog */
+  [role="dialog"] button,
+  [role="dialog"] .dialog-footer,
+  [role="dialog"] [class*="DialogClose"],
+  [data-radix-portal] [class*="bg-black/80"] {
+    display: none !important;
   }
 
-  /* Reset some global layout settings for better print output */
-  html, body {
-    background: white !important;
-    width: 80mm !important;
-    margin: 0 !important;
-    padding: 0 !important;
+  /* Remove scroll limitations for print using more generic selectors */
+  .overflow-y-auto, 
+  [class*="overflow-"],
+  [class*="max-h-"] {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
   }
 
-  /* Ensure background colors and images print correctly */
+  /* Ensure colors and images print */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-  }
-
-  /* Hide common UI overlays that might interfere */
-  button, 
-  [role="dialog"] > button,
-  .dialog-footer,
-  [data-radix-portal] > div:not([role="dialog"]) {
-    display: none !important;
+    color-adjust: exact !important;
   }
 }

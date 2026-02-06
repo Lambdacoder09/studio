@@ -1,10 +1,9 @@
-
 {
   "placeholderImages": [
     {
       "id": "business-logo",
       "description": "Professional business logo",
-      "imageUrl": "https://picsum.photos/seed/biz1/200/200",
+      "imageUrl": "https://picsum.photos/seed/bizlogo1/400/400",
       "imageHint": "business logo"
     },
     {
