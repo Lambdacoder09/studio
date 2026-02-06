@@ -2,15 +2,72 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Receipt, Filter, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import { Plus, Receipt, Filter, ArrowUpRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { MOCK_EXPENSES } from "@/lib/mock-data"
 import { Badge } from "@/components/ui/badge"
+import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from "@/firebase"
+import { collection, query, where, doc } from "firebase/firestore"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { useToast } from "@/hooks/use-toast"
+
+const expenseSchema = z.object({
+  expenseName: z.string().min(2, "Description required"),
+  category: z.string().min(1, "Category required"),
+  amount: z.coerce.number().min(0.01, "Amount must be positive"),
+})
+
+type ExpenseFormValues = z.infer<typeof expenseSchema>
 
 export default function ExpensesPage() {
-  const totalThisMonth = MOCK_EXPENSES.reduce((acc, curr) => acc + curr.amount, 0)
+  const { user } = useUser()
+  const firestore = useFirestore()
+  const { toast } = useToast()
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+
+  const expensesQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null
+    return query(collection(firestore, "expenses"), where("ownerId", "==", user.uid))
+  }, [firestore, user])
+  const { data: rawExpenses, isLoading } = useCollection(expensesQuery)
+
+  const expenses = rawExpenses ? [...rawExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) : []
+
+  const form = useForm<ExpenseFormValues>({
+    resolver: zodResolver(expenseSchema),
+    defaultValues: {
+      expenseName: "",
+      category: "Utilities",
+      amount: 0,
+    },
+  })
+
+  function onSubmit(values: ExpenseFormValues) {
+    if (!user || !firestore) return
+
+    const expenseRef = doc(collection(firestore, "expenses"))
+    const expenseData = {
+      ...values,
+      id: expenseRef.id,
+      ownerId: user.uid,
+      date: new Date().toISOString(),
+    }
+
+    setDocumentNonBlocking(expenseRef, expenseData, { merge: true })
+
+    setIsAddDialogOpen(false)
+    form.reset()
+    toast({ title: "Expense Added", description: "Your business expenses have been updated." })
+  }
+
+  const totalSpent = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0)
   
   return (
     <div className="space-y-6">
@@ -19,67 +76,83 @@ export default function ExpensesPage() {
           <h1 className="text-3xl font-bold tracking-tight text-primary">Expense Tracking</h1>
           <p className="text-muted-foreground">Monitor your operational costs and outflows.</p>
         </div>
-        <Button className="bg-secondary hover:bg-secondary/90 text-white gap-2">
-          <Plus className="h-4 w-4" /> Add New Expense
-        </Button>
+        
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-secondary hover:bg-secondary/90 text-white gap-2">
+              <Plus className="h-4 w-4" /> Add New Expense
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <DialogHeader>
+                  <DialogTitle>Add New Expense</DialogTitle>
+                  <DialogDescription>Record a business cost or operational outflow.</DialogDescription>
+                </DialogHeader>
+                <FormField
+                  control={form.control}
+                  name="expenseName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl><Input placeholder="e.g. Monthly Rent" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Rent">Rent</SelectItem>
+                          <SelectItem value="Utilities">Utilities</SelectItem>
+                          <SelectItem value="Supplies">Supplies</SelectItem>
+                          <SelectItem value="Marketing">Marketing</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount ($)</FormLabel>
+                      <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button type="submit">Add Expense</Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="bg-white border-none shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Total Monthly Expenditure</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Total Expenditure</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-rose-600">${totalThisMonth.toFixed(2)}</span>
-              <span className="text-xs text-muted-foreground flex items-center">
-                <ArrowUpRight className="h-3 w-3 text-rose-500 mr-1" /> +5.2% vs last month
-              </span>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="p-3 bg-muted/30 rounded-lg">
-                <p className="text-xs text-muted-foreground">Fixed Costs</p>
-                <p className="font-semibold">$1,200.00</p>
-              </div>
-              <div className="p-3 bg-muted/30 rounded-lg">
-                <p className="text-xs text-muted-foreground">Variable Costs</p>
-                <p className="font-semibold">${(totalThisMonth - 1200).toFixed(2)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white border-none shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Expense by Category</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-medium">
-                <span>Rent</span>
-                <span>80%</span>
-              </div>
-              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary" style={{ width: '80%' }}></div>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-medium">
-                <span>Utilities</span>
-                <span>15%</span>
-              </div>
-              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-secondary" style={{ width: '15%' }}></div>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-medium">
-                <span>Other</span>
-                <span>5%</span>
-              </div>
-              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-muted-foreground" style={{ width: '5%' }}></div>
-              </div>
+              <span className="text-4xl font-bold text-rose-600">${totalSpent.toFixed(2)}</span>
             </div>
           </CardContent>
         </Card>
@@ -91,9 +164,6 @@ export default function ExpensesPage() {
             <CardTitle>Expense Log</CardTitle>
             <CardDescription>Historical record of all business spending.</CardDescription>
           </div>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Filter className="h-4 w-4" /> Filter By Date
-          </Button>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border overflow-hidden">
@@ -107,20 +177,26 @@ export default function ExpensesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {MOCK_EXPENSES.map((expense) => (
-                  <TableRow key={expense.id}>
-                    <TableCell className="font-medium">{expense.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="font-normal capitalize">{expense.category}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-bold text-rose-600">
-                      -${expense.amount.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-center text-muted-foreground text-sm">
-                      {expense.date}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {isLoading ? (
+                  <TableRow><TableCell colSpan={4} className="text-center py-10"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
+                ) : expenses.length === 0 ? (
+                  <TableRow><TableCell colSpan={4} className="text-center py-10 text-muted-foreground">No expenses recorded yet.</TableCell></TableRow>
+                ) : (
+                  expenses.map((expense) => (
+                    <TableRow key={expense.id}>
+                      <TableCell className="font-medium">{expense.expenseName}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="font-normal capitalize">{expense.category}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-rose-600">
+                        -${Number(expense.amount).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-center text-muted-foreground text-sm">
+                        {new Date(expense.date).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>

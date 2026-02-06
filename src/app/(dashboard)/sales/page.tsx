@@ -10,9 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase"
-import { collection, query, where, doc, orderBy } from "firebase/firestore"
+import { collection, query, where, doc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
-import { cn } from "@/lib/utils"
 
 interface CartItem {
   productId: string;
@@ -40,13 +39,15 @@ export default function SalesPage() {
 
   const { data: products, isLoading: isProductsLoading } = useCollection(productsQuery)
 
-  // Fetch Sales for History
+  // Fetch Sales for History (Sort in-memory)
   const salesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null
-    return query(collection(firestore, "sales"), where("ownerId", "==", user.uid), orderBy("date", "desc"))
+    return query(collection(firestore, "sales"), where("ownerId", "==", user.uid))
   }, [firestore, user])
 
-  const { data: salesHistory, isLoading: isSalesLoading } = useCollection(salesQuery)
+  const { data: rawSalesHistory, isLoading: isSalesLoading } = useCollection(salesQuery)
+  
+  const salesHistory = rawSalesHistory ? [...rawSalesHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) : []
 
   const filteredProducts = products?.filter(p => 
     p.productName.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -179,14 +180,14 @@ export default function SalesPage() {
                         <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
                       </TableCell>
                     </TableRow>
-                  ) : salesHistory?.length === 0 ? (
+                  ) : salesHistory.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                         No sales recorded yet.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    salesHistory?.map((sale) => (
+                    salesHistory.map((sale) => (
                       <TableRow key={sale.id}>
                         <TableCell className="font-medium font-mono">{sale.invoiceNumber}</TableCell>
                         <TableCell>{new Date(sale.date).toLocaleDateString()}</TableCell>

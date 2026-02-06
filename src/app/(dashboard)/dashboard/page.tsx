@@ -10,10 +10,11 @@ import {
   DollarSign, 
   Package, 
   Receipt,
-  Loader2
+  Loader2,
+  CheckCircle2
 } from "lucide-react"
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, where, orderBy, limit } from "firebase/firestore"
+import { collection, query, where } from "firebase/firestore"
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser()
@@ -26,21 +27,23 @@ export default function DashboardPage() {
   }, [firestore, user])
   const { data: products, isLoading: isProductsLoading } = useCollection(productsQuery)
 
-  // Real-time Sales Data
+  // Real-time Sales Data (Sorted in-memory to avoid composite index requirement)
   const salesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null
-    return query(collection(firestore, "sales"), where("ownerId", "==", user.uid), orderBy("date", "desc"))
+    return query(collection(firestore, "sales"), where("ownerId", "==", user.uid))
   }, [firestore, user])
-  const { data: sales, isLoading: isSalesLoading } = useCollection(salesQuery)
+  const { data: rawSales, isLoading: isSalesLoading } = useCollection(salesQuery)
+  
+  const sales = rawSales ? [...rawSales].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) : []
 
-  // Real-time Expenses (Still mock for now as per schema logic)
+  // Real-time Expenses
   const expensesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null
     return query(collection(firestore, "expenses"), where("ownerId", "==", user.uid))
   }, [firestore, user])
-  const { data: expenses } = useCollection(expensesQuery)
+  const { data: expenses, isLoading: isExpensesLoading } = useCollection(expensesQuery)
 
-  if (isUserLoading || isProductsLoading || isSalesLoading) {
+  if (isUserLoading || isProductsLoading || isSalesLoading || isExpensesLoading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -113,10 +116,10 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {sales?.length === 0 ? (
+              {sales.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No sales recorded yet.</p>
               ) : (
-                sales?.slice(0, 5).map((sale) => (
+                sales.slice(0, 5).map((sale) => (
                   <div key={sale.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
                     <div className="space-y-1">
                       <p className="text-sm font-medium leading-none font-mono">{sale.invoiceNumber}</p>
@@ -163,25 +166,5 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
-  )
-}
-
-function CheckCircle2({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
   )
 }
