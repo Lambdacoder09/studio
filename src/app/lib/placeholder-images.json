@@ -1,0 +1,17 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "business-logo",
+      "description": "Professional business logo",
+      "imageUrl": "https://picsum.photos/seed/biz1/200/200",
+      "imageHint": "business logo"
+    },
+    {
+      "id": "avatar-user",
+      "description": "User avatar",
+      "imageUrl": "https://picsum.photos/seed/user1/100/100",
+      "imageHint": "person avatar"
+    }
+  ]
+}
