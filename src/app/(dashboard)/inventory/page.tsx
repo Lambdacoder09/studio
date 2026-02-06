@@ -1,7 +1,8 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Plus, Search, Filter, Edit2, Trash2, MoreHorizontal, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,6 +46,7 @@ import { collection, query, where, doc } from "firebase/firestore"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { useToast } from "@/hooks/use-toast"
 
 const productSchema = z.object({
   productName: z.string().min(2, "Name must be at least 2 characters"),
@@ -58,17 +60,26 @@ const productSchema = z.object({
 type ProductFormValues = z.infer<typeof productSchema>
 
 export default function InventoryPage() {
-  const { user } = useUser()
+  const { user, isUserLoading } = useUser()
   const firestore = useFirestore()
+  const router = useRouter()
+  const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push("/login")
+    }
+  }, [user, isUserLoading, router])
 
   const productsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null
     return query(collection(firestore, "products"), where("ownerId", "==", user.uid))
   }, [firestore, user])
 
-  const { data: products, isLoading } = useCollection(productsQuery)
+  const { data: products, isLoading: isDataLoading } = useCollection(productsQuery)
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -98,8 +109,22 @@ export default function InventoryPage() {
     }
 
     setDocumentNonBlocking(productRef, newProduct, { merge: true })
+    
     setIsAddDialogOpen(false)
     form.reset()
+    
+    toast({
+      title: "Product Added",
+      description: `${values.productName} has been successfully added to your inventory.`,
+    })
+  }
+
+  if (isUserLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
@@ -171,7 +196,7 @@ export default function InventoryPage() {
                     name="purchasePrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Purchase Price</FormLabel>
+                        <FormLabel>Purchase Price ($)</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" {...field} />
                         </FormControl>
@@ -184,7 +209,7 @@ export default function InventoryPage() {
                     name="sellingPrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Selling Price</FormLabel>
+                        <FormLabel>Selling Price ($)</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" {...field} />
                         </FormControl>
@@ -197,7 +222,7 @@ export default function InventoryPage() {
                     name="currentQuantity"
                     render={({ field }) => (
                       <FormItem className="col-span-2">
-                        <FormLabel>Current Stock</FormLabel>
+                        <FormLabel>Initial Stock Quantity</FormLabel>
                         <FormControl>
                           <Input type="number" {...field} />
                         </FormControl>
@@ -233,11 +258,6 @@ export default function InventoryPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Button variant="outline" size="sm" className="gap-2">
-                <Filter className="h-4 w-4" /> Filters
-              </Button>
-            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -255,7 +275,7 @@ export default function InventoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
+                {isDataLoading ? (
                   <TableRow>
                     <TableCell colSpan={7} className="h-24 text-center">
                       <div className="flex items-center justify-center gap-2">
