@@ -1,14 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { ShoppingCart, Plus, Receipt, Search, Download, Trash2, Printer, CheckCircle2, Loader2, Package } from "lucide-react"
+import { ShoppingCart, Plus, Receipt, Search, Trash2, Printer, Loader2, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { Separator } from "@/components/ui/separator"
 import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase"
 import { collection, query, where, doc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
@@ -36,20 +35,16 @@ export default function SalesPage() {
 
   const businessLogo = PlaceHolderImages.find(img => img.id === 'business-logo')?.imageUrl || "https://picsum.photos/seed/biz1/200/200"
 
-  // Fetch Products for the Catalog
   const productsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null
     return query(collection(firestore, "products"), where("ownerId", "==", user.uid))
   }, [firestore, user])
-
   const { data: products, isLoading: isProductsLoading } = useCollection(productsQuery)
 
-  // Fetch Sales for History (Sort in-memory)
   const salesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null
     return query(collection(firestore, "sales"), where("ownerId", "==", user.uid))
   }, [firestore, user])
-
   const { data: rawSalesHistory, isLoading: isSalesLoading } = useCollection(salesQuery)
   
   const salesHistory = rawSalesHistory ? [...rawSalesHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) : []
@@ -111,10 +106,8 @@ export default function SalesPage() {
       items: cart
     }
 
-    // Save Sale
     setDocumentNonBlocking(saleRef, saleData, { merge: true })
 
-    // Update Inventory Quantities
     cart.forEach(item => {
       const product = products?.find(p => p.id === item.productId)
       if (product) {
@@ -347,95 +340,92 @@ export default function SalesPage() {
 
       {/* Receipt Dialog */}
       <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white">
-          <DialogHeader className="p-6 pb-0">
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white print:p-0 print:border-none print:shadow-none">
+          <DialogHeader className="p-6 pb-0 print:hidden">
             <DialogTitle>Sales Receipt</DialogTitle>
             <DialogDescription>
               Transaction record for invoice #{currentSale?.invoiceNumber}
             </DialogDescription>
           </DialogHeader>
-          <div className="p-0 overflow-y-auto max-h-[70vh]">
-            <div id="printable-receipt" className="space-y-6 text-slate-900 bg-white p-6">
-              {/* Receipt Header */}
-              <div className="flex flex-col items-center text-center space-y-2 pb-6 border-b-2 border-dashed border-slate-200">
-                <div className="relative w-16 h-16 mb-1">
-                   <Image 
-                    src={businessLogo} 
-                    alt="BizManager Logo" 
-                    fill 
-                    className="object-contain grayscale contrast-125"
-                    data-ai-hint="business logo"
-                  />
-                </div>
-                <h2 className="text-xl font-black tracking-tighter uppercase text-slate-900">BizManager Official Store</h2>
-                <div className="space-y-0.5">
-                  <p className="text-[10px] font-medium text-slate-600 uppercase tracking-tight">123 Innovation Drive, Tech City, TC 90210</p>
-                  <p className="text-[9px] text-slate-500 font-mono">TEL: (555) 010-9988</p>
-                </div>
-              </div>
 
-              {/* Transaction Meta */}
-              <div className="grid grid-cols-2 gap-4 text-[10px] font-mono py-2 border-b border-slate-100">
-                <div className="space-y-1">
-                  <p className="font-bold text-slate-900 uppercase">Billing Details</p>
-                  <p>INV: #{currentSale?.invoiceNumber}</p>
-                  <p>DATE: {currentSale?.date && new Date(currentSale.date).toLocaleDateString()}</p>
-                </div>
-                <div className="text-right space-y-1 pt-3">
-                  <p>TIME: {currentSale?.date && new Date(currentSale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                  <p>CASHIER: {user?.email?.split('@')[0].toUpperCase() || 'SYS_ADMIN'}</p>
-                </div>
+          <div id="printable-receipt" className="p-8 space-y-8 bg-white text-slate-900 font-sans">
+            {/* Professional Header */}
+            <div className="text-center space-y-4">
+              <div className="relative w-16 h-16 mx-auto">
+                <Image 
+                  src={businessLogo} 
+                  alt="Logo" 
+                  fill 
+                  className="object-contain grayscale contrast-150"
+                  data-ai-hint="business logo"
+                />
               </div>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-black uppercase tracking-tighter">BizManager Store</h2>
+                <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">Premium Inventory & Supply Solutions</p>
+                <p className="text-[10px] text-slate-400 font-mono">123 Innovation Way, Silicon Valley, CA 94025</p>
+              </div>
+            </div>
 
-              {/* Items Table */}
-              <div className="space-y-2">
-                <div className="grid grid-cols-12 text-[9px] font-black uppercase text-slate-400 px-1 border-b pb-0.5">
-                  <div className="col-span-6">Description</div>
-                  <div className="col-span-2 text-center">Qty</div>
-                  <div className="col-span-2 text-right">Unit</div>
-                  <div className="col-span-2 text-right">Total</div>
-                </div>
-                <div className="space-y-1.5">
-                  {currentSale?.items?.map((item: any, idx: number) => (
-                    <div key={idx} className="grid grid-cols-12 text-[10px] items-start px-1">
-                      <div className="col-span-6 flex flex-col">
-                        <span className="font-bold text-slate-800 uppercase leading-tight">{item.name}</span>
-                        <span className="text-[8px] text-slate-400 font-mono">SKU: {item.sku || 'N/A'}</span>
-                      </div>
-                      <div className="col-span-2 text-center text-slate-600 font-mono">{item.quantity}</div>
-                      <div className="col-span-2 text-right text-slate-600 font-mono">${item.price.toFixed(2)}</div>
-                      <div className="col-span-2 text-right font-black text-slate-900 font-mono">${(item.quantity * item.price).toFixed(2)}</div>
+            {/* Transaction Data Block */}
+            <div className="grid grid-cols-2 gap-8 border-y-2 border-slate-100 py-4 text-[11px]">
+              <div className="space-y-1.5">
+                <p className="font-bold text-slate-400 uppercase tracking-wider">Transaction Info</p>
+                <p className="font-mono"><span className="text-slate-400">INV:</span> #{currentSale?.invoiceNumber}</p>
+                <p className="font-mono"><span className="text-slate-400">DATE:</span> {currentSale?.date && new Date(currentSale.date).toLocaleDateString()}</p>
+              </div>
+              <div className="text-right space-y-1.5 pt-4">
+                <p className="font-mono"><span className="text-slate-400">TIME:</span> {currentSale?.date && new Date(currentSale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                <p className="font-mono"><span className="text-slate-400">STAFF:</span> {user?.email?.split('@')[0].toUpperCase()}</p>
+              </div>
+            </div>
+
+            {/* Itemized Billing Table */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-12 text-[10px] font-black uppercase text-slate-400 border-b pb-2">
+                <div className="col-span-6">Item Description</div>
+                <div className="col-span-2 text-center">Qty</div>
+                <div className="col-span-2 text-right">Price</div>
+                <div className="col-span-2 text-right">Total</div>
+              </div>
+              <div className="space-y-3">
+                {currentSale?.items?.map((item: any, idx: number) => (
+                  <div key={idx} className="grid grid-cols-12 text-[11px] items-center">
+                    <div className="col-span-6 space-y-0.5">
+                      <p className="font-bold uppercase leading-none">{item.name}</p>
+                      <p className="text-[9px] text-slate-400 font-mono">SKU: {item.sku || 'N/A'}</p>
                     </div>
-                  ))}
-                </div>
+                    <div className="col-span-2 text-center font-mono text-slate-600">{item.quantity}</div>
+                    <div className="col-span-2 text-right font-mono text-slate-600">${item.price.toFixed(2)}</div>
+                    <div className="col-span-2 text-right font-black font-mono">${(item.quantity * item.price).toFixed(2)}</div>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              {/* Totals Section */}
-              <div className="pt-4 border-t-2 border-dashed border-slate-200 space-y-2">
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-[11px] font-black uppercase tracking-widest text-slate-900">Total Due</span>
-                  <span className="text-xl font-black text-primary font-mono tracking-tighter">
-                    ${Number(currentSale?.totalAmount).toFixed(2)}
-                  </span>
-                </div>
-              </div>
+            {/* Total Calculation */}
+            <div className="pt-6 border-t-4 border-double border-slate-100 flex justify-between items-center">
+              <p className="text-xs font-black uppercase tracking-[0.2em]">Amount Due</p>
+              <p className="text-3xl font-black tracking-tighter text-primary font-mono">
+                ${Number(currentSale?.totalAmount).toFixed(2)}
+              </p>
+            </div>
 
-              {/* Footer */}
-              <div className="text-center space-y-4 pt-4">
-                <div className="flex flex-col items-center gap-1">
-                   <div className="w-24 border-t border-slate-300"></div>
-                   <span className="text-[8px] uppercase font-bold text-slate-400 tracking-tighter">Authorized Signature</span>
-                </div>
-                <p className="text-[9px] text-slate-400 font-medium uppercase tracking-widest">Thank you for visiting!</p>
+            {/* Footer & Signature */}
+            <div className="pt-8 text-center space-y-8">
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-48 h-[1px] bg-slate-200"></div>
+                <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Official Authorization</span>
               </div>
+              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-[0.3em]">Thank you for your business</p>
             </div>
           </div>
 
-          <DialogFooter className="p-4 border-t bg-slate-50 gap-2 sm:justify-center print:hidden">
-            <Button variant="outline" className="flex-1 max-w-[140px]" onClick={() => setIsReceiptOpen(false)}>
-              Close
+          <DialogFooter className="p-4 border-t bg-slate-50 gap-2 print:hidden sm:justify-center">
+            <Button variant="outline" className="flex-1" onClick={() => setIsReceiptOpen(false)}>
+              Dismiss
             </Button>
-            <Button className="flex-1 max-w-[140px] bg-primary text-white gap-2" onClick={handlePrint}>
+            <Button className="flex-1 bg-primary text-white gap-2" onClick={handlePrint}>
               <Printer className="h-4 w-4" /> Print Document
             </Button>
           </DialogFooter>

@@ -4,19 +4,19 @@
 
 @layer base {
   :root {
-    --background: 0 0% 96%; /* #F5F5F5 Light Gray */
+    --background: 0 0% 96%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 231 48% 48%; /* #3F51B5 Deep Blue */
+    --primary: 231 48% 48%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 174 100% 29%; /* #009688 Teal */
+    --secondary: 174 100% 29%;
     --secondary-foreground: 210 40% 98%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 174 100% 29%; /* Teal */
+    --accent: 174 100% 29%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -65,51 +65,58 @@
 
 @media print {
   @page {
-    margin: 0;
+    margin: 1cm;
     size: auto;
   }
 
-  /* Reset everything */
-  body * {
-    visibility: hidden !important;
-    height: 0 !important;
-    overflow: hidden !important;
+  /* Completely hide the entire application UI */
+  body > *:not([data-radix-portal]) {
+    display: none !important;
   }
 
-  /* Ensure the portal and dialog contents are theoretically visible */
-  body > [data-radix-portal],
-  body > [data-radix-portal] *,
-  #printable-receipt,
+  /* Ensure the portal is visible and centered/styled for print */
+  [data-radix-portal] {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  /* Reset Dialog styles to be a simple, non-centered document */
+  [data-radix-portal] [role="dialog"] {
+    position: static !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+  }
+
+  /* Hide overlays, close buttons, and footer buttons */
+  [data-radix-portal] [data-state="open"],
+  [data-radix-portal] button,
+  .print-hidden {
+    display: none !important;
+  }
+
+  /* The actual receipt content */
+  #printable-receipt {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Force elements to be visible */
   #printable-receipt * {
     visibility: visible !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  /* Position the receipt at the top of the first page */
-  #printable-receipt {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    min-height: 100vh !important;
-    background: white !important;
-    padding: 1cm !important;
-    margin: 0 !important;
-    display: block !important;
-    z-index: 9999 !important;
-  }
-
-  /* Hide UI junk inside the printable area */
-  .print\:hidden {
-    display: none !important;
-    visibility: hidden !important;
-  }
-
-  /* Force white background */
-  html, body {
-    background: white !important;
-    height: 100% !important;
-    overflow: visible !important;
   }
 }
