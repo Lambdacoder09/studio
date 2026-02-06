@@ -25,6 +25,7 @@ const purchaseSchema = z.object({
   productId: z.string().min(1, "Product required"),
   quantity: z.coerce.number().min(1, "Quantity must be at least 1"),
   purchasePrice: z.coerce.number().min(0.01, "Price must be positive"),
+  gstRate: z.coerce.number().min(0),
 })
 
 type PurchaseFormValues = z.infer<typeof purchaseSchema>
@@ -57,8 +58,19 @@ export default function PurchasesPage() {
       productId: "",
       quantity: 1,
       purchasePrice: 0,
+      gstRate: 0,
     },
   })
+
+  // Update GST rate when product changes
+  const onProductChange = (productId: string) => {
+    const product = products?.find(p => p.id === productId)
+    if (product) {
+      form.setValue("gstRate", product.gstRate)
+      form.setValue("purchasePrice", product.purchasePrice)
+    }
+    form.setValue("productId", productId)
+  }
 
   function onSubmit(values: PurchaseFormValues) {
     if (!user || !firestore) return
@@ -67,6 +79,8 @@ export default function PurchasesPage() {
     if (!selectedProduct) return
 
     const purchaseRef = doc(collection(firestore, "purchases"))
+    const gstAmount = (values.purchasePrice * values.quantity) * (values.gstRate / 100)
+    
     const purchaseData = {
       ...values,
       id: purchaseRef.id,
@@ -74,15 +88,28 @@ export default function PurchasesPage() {
       productName: selectedProduct.productName,
       sku: selectedProduct.sku,
       date: new Date().toISOString(),
+      gstAmount,
       voucherNumber: `PUR-${Date.now().toString().slice(-6)}`,
     }
 
     setDocumentNonBlocking(purchaseRef, purchaseData, { merge: true })
 
+    // Update product quantity
     const productRef = doc(firestore, "products", values.productId)
     updateDocumentNonBlocking(productRef, {
       currentQuantity: Number(selectedProduct.currentQuantity) + Number(values.quantity)
     })
+
+    // Log the event
+    const logRef = doc(collection(firestore, "logs"))
+    setDocumentNonBlocking(logRef, {
+      id: logRef.id,
+      ownerId: user.uid,
+      type: "purchase",
+      action: `Recorded purchase from ${values.supplierName} for ${selectedProduct.productName}`,
+      timestamp: new Date().toISOString(),
+      metadata: { purchaseId: purchaseRef.id }
+    }, { merge: true })
 
     setIsAddDialogOpen(false)
     form.reset()
@@ -112,7 +139,7 @@ export default function PurchasesPage() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <DialogHeader>
                   <DialogTitle>Record Purchase</DialogTitle>
-                  <DialogDescription>Add items to inventory from a supplier.</DialogDescription>
+                  <DialogDescription>Add items to inventory from a supplier. Taxes are calculated for P&L.</DialogDescription>
                 </DialogHeader>
                 <FormField
                   control={form.control}
@@ -131,7 +158,7 @@ export default function PurchasesPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Product</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={onProductChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a product" />
@@ -164,13 +191,24 @@ export default function PurchasesPage() {
                     name="purchasePrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Unit Cost (₹)</FormLabel>
+                        <FormLabel>Unit Cost (Excl. GST) (₹)</FormLabel>
                         <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="gstRate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Purchase GST Rate (%)</FormLabel>
+                      <FormControl><Input type="number" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <DialogFooter>
                   <Button type="submit" className="w-full">Save and Generate Voucher</Button>
                 </DialogFooter>

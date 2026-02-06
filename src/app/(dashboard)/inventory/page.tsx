@@ -29,7 +29,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Form,
@@ -48,7 +47,7 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from "@/firebase"
+import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase"
 import { collection, query, where, doc } from "firebase/firestore"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -74,6 +73,7 @@ export default function InventoryPage() {
   const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<any | null>(null)
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -88,7 +88,7 @@ export default function InventoryPage() {
 
   const { data: products, isLoading: isDataLoading } = useCollection(productsQuery)
 
-  const form = useForm<ProductFormValues>({
+  const addForm = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       productName: "",
@@ -101,12 +101,30 @@ export default function InventoryPage() {
     },
   })
 
+  const editForm = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema),
+  })
+
+  useEffect(() => {
+    if (editingProduct) {
+      editForm.reset({
+        productName: editingProduct.productName,
+        sku: editingProduct.sku,
+        category: editingProduct.category,
+        purchasePrice: editingProduct.purchasePrice,
+        sellingPrice: editingProduct.sellingPrice,
+        gstRate: editingProduct.gstRate,
+        currentQuantity: editingProduct.currentQuantity,
+      })
+    }
+  }, [editingProduct, editForm])
+
   const filteredProducts = products?.filter(p => 
     p.productName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.sku.toLowerCase().includes(searchTerm.toLowerCase())
   ) || []
 
-  function onSubmit(values: ProductFormValues) {
+  function onAdd(values: ProductFormValues) {
     if (!user || !firestore) return
 
     const productRef = doc(collection(firestore, "products"))
@@ -118,12 +136,66 @@ export default function InventoryPage() {
 
     setDocumentNonBlocking(productRef, newProduct, { merge: true })
     
+    // Log the event
+    const logRef = doc(collection(firestore, "logs"))
+    setDocumentNonBlocking(logRef, {
+      id: logRef.id,
+      ownerId: user.uid,
+      type: "inventory",
+      action: `Added new product: ${values.productName}`,
+      timestamp: new Date().toISOString()
+    }, { merge: true })
+
     setIsAddDialogOpen(false)
-    form.reset()
+    addForm.reset()
     
     toast({
       title: "Product Added",
-      description: `${values.productName} (GST ${values.gstRate}%) has been added.`,
+      description: `${values.productName} has been added.`,
+    })
+  }
+
+  function onEdit(values: ProductFormValues) {
+    if (!user || !firestore || !editingProduct) return
+
+    const productRef = doc(firestore, "products", editingProduct.id)
+    updateDocumentNonBlocking(productRef, values)
+
+    // Log the event
+    const logRef = doc(collection(firestore, "logs"))
+    setDocumentNonBlocking(logRef, {
+      id: logRef.id,
+      ownerId: user.uid,
+      type: "inventory",
+      action: `Updated product: ${editingProduct.productName} -> ${values.productName}`,
+      timestamp: new Date().toISOString()
+    }, { merge: true })
+
+    setEditingProduct(null)
+    toast({
+      title: "Product Updated",
+      description: `${values.productName} has been updated.`,
+    })
+  }
+
+  function onDelete(product: any) {
+    if (!user || !firestore) return
+    const productRef = doc(firestore, "products", product.id)
+    deleteDocumentNonBlocking(productRef)
+
+    // Log the event
+    const logRef = doc(collection(firestore, "logs"))
+    setDocumentNonBlocking(logRef, {
+      id: logRef.id,
+      ownerId: user.uid,
+      type: "inventory",
+      action: `Deleted product: ${product.productName}`,
+      timestamp: new Date().toISOString()
+    }, { merge: true })
+
+    toast({
+      title: "Product Deleted",
+      description: `${product.productName} removed from inventory.`,
     })
   }
 
@@ -143,138 +215,9 @@ export default function InventoryPage() {
           <p className="text-muted-foreground">Monitor and manage pharmaceutical stock and GST rates.</p>
         </div>
         
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-secondary hover:bg-secondary/90 text-white gap-2">
-              <Plus className="h-4 w-4" /> Add New Product
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] h-[70vh] max-h-[70vh]">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <DialogHeader>
-                  <DialogTitle>Add New Product</DialogTitle>
-                  <DialogDescription>
-                    Select GST rate based on category (0% Essential, 5% Prescription, 18% Supplements).
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="productName"
-                    render={({ field }) => (
-                      <FormItem className="col-span-2">
-                        <FormLabel>Product Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. Paracetamol 500mg" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="sku"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>SKU / Batch</FormLabel>
-                        <FormControl>
-                          <Input placeholder="BAT-001" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Category</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Antibiotics" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="purchasePrice"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Purchase Price (₹)</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="sellingPrice"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Selling Price (Excl. GST) (₹)</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                    control={form.control}
-                    name="gstRate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>GST Rate (%)</FormLabel>
-                        <Select onValueChange={(val) => field.onChange(Number(val))} defaultValue={field.value.toString()}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select GST" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="0">0% (Exempt/Life-saving)</SelectItem>
-                            <SelectItem value="5">5% (General Prescription)</SelectItem>
-                            <SelectItem value="12">12% (Bulk/APIs)</SelectItem>
-                            <SelectItem value="18">18% (Supplements/Nutra)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="currentQuantity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Stock Quantity</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <DialogFooter className="pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" className="bg-primary text-white">
-                    Save Product
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        <Button className="bg-secondary hover:bg-secondary/90 text-white gap-2" onClick={() => setIsAddDialogOpen(true)}>
+          <Plus className="h-4 w-4" /> Add New Product
+        </Button>
       </div>
 
       <Card className="border-none shadow-sm bg-white">
@@ -347,11 +290,11 @@ export default function InventoryPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem className="gap-2 cursor-pointer">
+                            <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => setEditingProduct(product)}>
                               <Edit2 className="h-4 w-4" /> Edit
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive gap-2 cursor-pointer">
+                            <DropdownMenuItem className="text-destructive gap-2 cursor-pointer" onClick={() => onDelete(product)}>
                               <Trash2 className="h-4 w-4" /> Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -365,6 +308,256 @@ export default function InventoryPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Add Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <Form {...addForm}>
+            <form onSubmit={addForm.handleSubmit(onAdd)} className="space-y-4">
+              <DialogHeader>
+                <DialogTitle>Add New Product</DialogTitle>
+                <DialogDescription>
+                  Enter product details. Stock levels and GST will be updated automatically.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={addForm.control}
+                  name="productName"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Product Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Paracetamol 500mg" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={addForm.control}
+                  name="sku"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SKU / Batch</FormLabel>
+                      <FormControl>
+                        <Input placeholder="BAT-001" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={addForm.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Antibiotics" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={addForm.control}
+                  name="purchasePrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Purchase Price (₹)</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={addForm.control}
+                  name="sellingPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Selling Price (Excl. GST) (₹)</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={addForm.control}
+                  name="gstRate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>GST Rate (%)</FormLabel>
+                      <Select onValueChange={(val) => field.onChange(Number(val))} defaultValue={field.value.toString()}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select GST" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="0">0% (Exempt)</SelectItem>
+                          <SelectItem value="5">5% (General)</SelectItem>
+                          <SelectItem value="12">12% (Bulk)</SelectItem>
+                          <SelectItem value="18">18% (Supplements)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={addForm.control}
+                  name="currentQuantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Current Stock</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <DialogFooter className="pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+                <Button type="submit" className="bg-primary text-white">Save Product</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingProduct} onOpenChange={(open) => !open && setEditingProduct(null)}>
+        <DialogContent className="sm:max-w-[600px]">
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEdit)} className="space-y-4">
+              <DialogHeader>
+                <DialogTitle>Edit Product</DialogTitle>
+                <DialogDescription>
+                  Modify attributes for {editingProduct?.productName}.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="productName"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Product Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="sku"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SKU / Batch</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="purchasePrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Purchase Price (₹)</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="sellingPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Selling Price (Excl. GST) (₹)</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={editForm.control}
+                  name="gstRate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>GST Rate (%)</FormLabel>
+                      <Select onValueChange={(val) => field.onChange(Number(val))} defaultValue={field.value?.toString()}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select GST" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="0">0% (Exempt)</SelectItem>
+                          <SelectItem value="5">5% (General)</SelectItem>
+                          <SelectItem value="12">12% (Bulk)</SelectItem>
+                          <SelectItem value="18">18% (Supplements)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="currentQuantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Current Stock</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <DialogFooter className="pt-4">
+                <Button type="button" variant="outline" onClick={() => setEditingProduct(null)}>Cancel</Button>
+                <Button type="submit" className="bg-primary text-white">Save Changes</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

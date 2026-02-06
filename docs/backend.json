@@ -132,7 +132,10 @@
         },
         "productId": {
           "type": "string",
-          "description": "Reference to Product. (Relationship: Purchase 1:N Product)"
+          "description": "Reference to Product."
+        },
+        "productName": {
+          "type": "string"
         },
         "quantity": {
           "type": "number",
@@ -140,12 +143,23 @@
         },
         "purchasePrice": {
           "type": "number",
-          "description": "Price at which the product was purchased."
+          "description": "Price at which the product was purchased (excluding GST)."
+        },
+        "gstRate": {
+          "type": "number",
+          "description": "GST rate paid on purchase."
+        },
+        "gstAmount": {
+          "type": "number",
+          "description": "Total GST paid on this purchase."
         },
         "date": {
           "type": "string",
           "description": "Date of the purchase.",
           "format": "date-time"
+        },
+        "voucherNumber": {
+          "type": "string"
         }
       },
       "required": [
