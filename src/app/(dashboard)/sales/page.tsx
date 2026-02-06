@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ShoppingCart, Plus, Receipt, Search, Trash2, Printer, Loader2, Package } from "lucide-react"
+import { ShoppingCart, Plus, Receipt, Search, Trash2, Printer, Loader2, Package, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -139,7 +139,7 @@ export default function SalesPage() {
           <h1 className="text-3xl font-bold tracking-tight text-primary">Sales Management</h1>
           <p className="text-muted-foreground">Process new sales and manage transaction history.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 print-hidden">
           <Button 
             variant={view === "history" ? "default" : "outline"} 
             onClick={() => setView("history")}
@@ -158,7 +158,7 @@ export default function SalesPage() {
       </div>
 
       {view === "history" ? (
-        <Card className="border-none shadow-sm bg-white">
+        <Card className="border-none shadow-sm bg-white print-hidden">
           <CardHeader>
             <CardTitle>Transaction Records</CardTitle>
             <CardDescription>A list of all sales processed through BizManager.</CardDescription>
@@ -228,7 +228,7 @@ export default function SalesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print-hidden">
           <Card className="lg:col-span-2 border-none shadow-sm bg-white">
             <CardHeader>
               <CardTitle>Catalog</CardTitle>
@@ -340,9 +340,9 @@ export default function SalesPage() {
 
       {/* Receipt Dialog */}
       <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white print:p-0 print:border-none print:shadow-none">
-          <DialogHeader className="p-6 pb-0 print:hidden">
-            <DialogTitle>Sales Receipt</DialogTitle>
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white">
+          <DialogHeader className="p-6 pb-0 print-hidden">
+            <DialogTitle>Sales Receipt Generated</DialogTitle>
             <DialogDescription>
               Transaction record for invoice #{currentSale?.invoiceNumber}
             </DialogDescription>
@@ -356,7 +356,7 @@ export default function SalesPage() {
                   src={businessLogo} 
                   alt="Logo" 
                   fill 
-                  className="object-contain grayscale contrast-150"
+                  className="object-contain grayscale"
                   data-ai-hint="business logo"
                 />
               </div>
@@ -374,16 +374,16 @@ export default function SalesPage() {
                 <p className="font-mono"><span className="text-slate-400">INV:</span> #{currentSale?.invoiceNumber}</p>
                 <p className="font-mono"><span className="text-slate-400">DATE:</span> {currentSale?.date && new Date(currentSale.date).toLocaleDateString()}</p>
               </div>
-              <div className="text-right space-y-1.5 pt-4">
-                <p className="font-mono"><span className="text-slate-400">TIME:</span> {currentSale?.date && new Date(currentSale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+              <div className="text-right space-y-1.5">
+                <p className="font-mono pt-4"><span className="text-slate-400">TIME:</span> {currentSale?.date && new Date(currentSale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                 <p className="font-mono"><span className="text-slate-400">STAFF:</span> {user?.email?.split('@')[0].toUpperCase()}</p>
               </div>
             </div>
 
             {/* Itemized Billing Table */}
-            <div className="space-y-4">
+            <div className="space-y-4 min-h-[150px]">
               <div className="grid grid-cols-12 text-[10px] font-black uppercase text-slate-400 border-b pb-2">
-                <div className="col-span-6">Item Description</div>
+                <div className="col-span-6">Description</div>
                 <div className="col-span-2 text-center">Qty</div>
                 <div className="col-span-2 text-right">Price</div>
                 <div className="col-span-2 text-right">Total</div>
@@ -417,11 +417,17 @@ export default function SalesPage() {
                 <div className="w-48 h-[1px] bg-slate-200"></div>
                 <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Official Authorization</span>
               </div>
-              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-[0.3em]">Thank you for your business</p>
+              <div className="space-y-1">
+                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-[0.3em]">Thank you for your business</p>
+                <div className="flex items-center justify-center gap-1 text-slate-300">
+                  <CheckCircle2 className="h-3 w-3 receipt-icon" />
+                  <span className="text-[8px] font-mono italic">Verified Transaction</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <DialogFooter className="p-4 border-t bg-slate-50 gap-2 print:hidden sm:justify-center">
+          <DialogFooter className="p-4 border-t bg-slate-50 gap-2 print-hidden sm:justify-center">
             <Button variant="outline" className="flex-1" onClick={() => setIsReceiptOpen(false)}>
               Dismiss
             </Button>

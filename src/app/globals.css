@@ -64,59 +64,63 @@
 }
 
 @media print {
-  @page {
-    margin: 1cm;
-    size: auto;
+  /* Hide absolutely everything by default */
+  html, body {
+    visibility: hidden;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
   }
 
-  /* Completely hide the entire application UI */
-  body > *:not([data-radix-portal]) {
-    display: none !important;
+  /* Target the receipt and its necessary ancestors for display */
+  #printable-receipt,
+  #printable-receipt * {
+    visibility: visible;
   }
 
-  /* Ensure the portal is visible and centered/styled for print */
-  [data-radix-portal] {
+  /* Reset the Radix Dialog and Portal for printing */
+  [role="dialog"],
+  [data-radix-portal],
+  div[data-state="open"] {
+    visibility: visible !important;
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
-    height: auto !important;
-    display: block !important;
-  }
-
-  /* Reset Dialog styles to be a simple, non-centered document */
-  [data-radix-portal] [role="dialog"] {
-    position: static !important;
-    transform: none !important;
-    width: 100% !important;
-    max-width: none !important;
-    height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
     box-shadow: none !important;
-    background: white !important;
-  }
-
-  /* Hide overlays, close buttons, and footer buttons */
-  [data-radix-portal] [data-state="open"],
-  [data-radix-portal] button,
-  .print-hidden {
-    display: none !important;
-  }
-
-  /* The actual receipt content */
-  #printable-receipt {
+    background: transparent !important;
+    transform: none !important; /* Remove centering transforms */
     display: block !important;
+  }
+
+  /* Position the receipt at the very top of the page */
+  #printable-receipt {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
     width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
+    max-width: 800px; /* Prevent it from being "too big" */
+    margin: 0 auto !important;
+    padding: 2rem !important;
     background: white !important;
     color: black !important;
   }
 
-  /* Force elements to be visible */
-  #printable-receipt * {
-    visibility: visible !important;
+  /* Remove all browser-injected print elements and scrollbars */
+  @page {
+    margin: 0;
+    size: auto;
+  }
+
+  /* Hide specific UI elements within the visible tree */
+  .print-hidden,
+  button,
+  [data-radix-collection],
+  svg:not(.receipt-icon) {
+    display: none !important;
   }
 }
