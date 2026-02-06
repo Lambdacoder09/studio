@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -7,24 +8,36 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { useAuth, useUser, initiateEmailSignIn, initiateAnonymousSignIn } from "@/firebase"
+import { useAuth, useUser, initiateEmailSignIn, initiateAnonymousSignIn, setDocumentNonBlocking, useFirestore } from "@/firebase"
 import { useToast } from "@/hooks/use-toast"
+import { doc, collection } from "firebase/firestore"
 
 export default function LoginPage() {
   const { user } = useUser()
   const auth = useAuth()
+  const firestore = useFirestore()
   const router = useRouter()
   const { toast } = useToast()
   const [email, setEmail] = useState("demo@example.com")
   const [password, setPassword] = useState("password123")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Redirect if already logged in
+  // Redirect if already logged in and log the event
   useEffect(() => {
-    if (user) {
+    if (user && firestore) {
+      // Log successful login
+      const logRef = doc(collection(firestore, "logs"))
+      setDocumentNonBlocking(logRef, {
+        id: logRef.id,
+        ownerId: user.uid,
+        type: "auth",
+        action: `User signed in: ${user.email || 'Anonymous Guest'}`,
+        timestamp: new Date().toISOString()
+      }, { merge: true })
+
       router.push("/dashboard")
     }
-  }, [user, router])
+  }, [user, firestore, router])
 
   const handleAuthError = (error: any) => {
     setIsSubmitting(false)

@@ -105,6 +105,17 @@ export default function SalesPage() {
 
     setDocumentNonBlocking(saleRef, saleData, { merge: true })
 
+    // Log the sale completion
+    const logRef = doc(collection(firestore, "logs"))
+    setDocumentNonBlocking(logRef, {
+      id: logRef.id,
+      ownerId: user.uid,
+      type: "sale",
+      action: `Completed Sale ${invoiceNumber} for $${cartTotal.toFixed(2)}`,
+      timestamp: new Date().toISOString(),
+      metadata: { saleId: saleRef.id, invoiceNumber }
+    }, { merge: true })
+
     cart.forEach(item => {
       const product = products?.find(p => p.id === item.productId)
       if (product) {

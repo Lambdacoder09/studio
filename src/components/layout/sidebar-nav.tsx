@@ -11,11 +11,14 @@ import {
   Receipt, 
   BarChart3, 
   Settings,
-  LogOut
+  LogOut,
+  ShieldCheck
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useAuth } from "@/firebase"
+import { useAuth, useUser, setDocumentNonBlocking } from "@/firebase"
 import { signOut } from "firebase/auth"
+import { doc, collection } from "firebase/firestore"
+import { useFirestore } from "@/firebase"
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -24,6 +27,7 @@ const navItems = [
   { name: "Purchases", href: "/purchases", icon: Truck },
   { name: "Expenses", href: "/expenses", icon: Receipt },
   { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Logs", href: "/logs", icon: ShieldCheck },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
@@ -31,9 +35,21 @@ export function SidebarNav() {
   const pathname = usePathname()
   const router = useRouter()
   const auth = useAuth()
+  const { user } = useUser()
+  const firestore = useFirestore()
 
   const handleLogout = async () => {
-    if (auth) {
+    if (auth && user && firestore) {
+      // Log the logout event
+      const logRef = doc(collection(firestore, "logs"))
+      setDocumentNonBlocking(logRef, {
+        id: logRef.id,
+        ownerId: user.uid,
+        type: "auth",
+        action: `User logged out: ${user.email}`,
+        timestamp: new Date().toISOString()
+      }, { merge: true })
+
       await signOut(auth)
       router.push("/login")
     }

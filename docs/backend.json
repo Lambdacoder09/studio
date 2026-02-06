@@ -181,6 +181,40 @@
         "amount",
         "date"
       ]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "type": "object",
+      "description": "Represents an audit log of actions performed by the user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the log entry."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "The UID of the user who performed the action."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["auth", "sale", "purchase", "expense", "inventory"],
+          "description": "The category of the action."
+        },
+        "action": {
+          "type": "string",
+          "description": "A human-readable description of what happened."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the action occurred."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Optional additional context about the event."
+        }
+      },
+      "required": ["id", "ownerId", "type", "action", "timestamp"]
     }
   },
   "auth": {
@@ -198,7 +232,7 @@
           "schema": {
             "$ref": "#/backend/entities/Product"
           },
-          "description": "Stores product information. Each product document contains all product details.",
+          "description": "Stores product information.",
           "params": [
             {
               "name": "productId",
@@ -214,7 +248,7 @@
           "schema": {
             "$ref": "#/backend/entities/Sale"
           },
-          "description": "Stores sales transaction data. Each sale document includes details such as date, invoice number, total amount, and references to products sold.",
+          "description": "Stores sales transaction data.",
           "params": [
             {
               "name": "saleId",
@@ -230,7 +264,7 @@
           "schema": {
             "$ref": "#/backend/entities/Purchase"
           },
-          "description": "Stores purchase transaction data. Includes supplier name, product, quantity, purchase price, and date.",
+          "description": "Stores purchase transaction data.",
           "params": [
             {
               "name": "purchaseId",
@@ -246,7 +280,7 @@
           "schema": {
             "$ref": "#/backend/entities/Expense"
           },
-          "description": "Stores expense data. Contains fields for expense name, category, amount, and date.",
+          "description": "Stores expense data.",
           "params": [
             {
               "name": "expenseId",
@@ -254,8 +288,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "logs/{logId}",
+        "definition": {
+          "entityName": "ActivityLog",
+          "schema": {
+            "$ref": "#/backend/entities/ActivityLog"
+          },
+          "description": "Stores activity logs for auditing purposes.",
+          "params": [
+            {
+              "name": "logId",
+              "description": "Unique identifier for the log entry."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the BizManager application's requirements for managing inventory, sales, purchases, and expenses for a small business. A top-level collection `products` stores the inventory. The `sales`, `purchases`, and `expenses` collections are stored at the top level for easy querying and reporting. Each document in the collection is owned by the user and thus uses path-based ownership, enabling secure list operations and simplified security rules."
+    "reasoning": "The Firestore structure supports core business operations and now includes a logs collection for activity auditing."
   }
 }
