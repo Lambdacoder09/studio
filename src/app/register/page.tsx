@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -9,15 +8,18 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { useAuth, useUser, initiateEmailSignUp } from "@/firebase"
+import { useToast } from "@/hooks/use-toast"
 
 export default function RegisterPage() {
   const { user } = useUser()
   const auth = useAuth()
   const router = useRouter()
+  const { toast } = useToast()
   
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [businessName, setBusinessName] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -25,11 +27,20 @@ export default function RegisterPage() {
     }
   }, [user, router])
 
+  const handleAuthError = (error: any) => {
+    setIsSubmitting(false)
+    toast({
+      variant: "destructive",
+      title: "Registration Failed",
+      description: error.message || "An error occurred while creating your account.",
+    })
+  }
+
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault()
     if (!auth) return
-    initiateEmailSignUp(auth, email, password)
-    // Note: In a real app, you'd also save the businessName to a user profile doc
+    setIsSubmitting(true)
+    initiateEmailSignUp(auth, email, password, handleAuthError)
   }
 
   return (
@@ -51,6 +62,7 @@ export default function RegisterPage() {
                 placeholder="My Awesome Store" 
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
+                disabled={isSubmitting}
                 required 
               />
             </div>
@@ -62,6 +74,7 @@ export default function RegisterPage() {
                 placeholder="owner@store.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isSubmitting}
                 required 
               />
             </div>
@@ -72,12 +85,15 @@ export default function RegisterPage() {
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isSubmitting}
                 required 
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4 pt-4">
-            <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90">Create Account</Button>
+            <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90" disabled={isSubmitting}>
+              {isSubmitting ? "Creating Account..." : "Create Account"}
+            </Button>
             <div className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
               <Link href="/login" className="text-primary hover:underline font-medium">Sign in here</Link>

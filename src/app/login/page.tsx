@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -9,13 +8,16 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { useAuth, useUser, initiateEmailSignIn, initiateAnonymousSignIn } from "@/firebase"
+import { useToast } from "@/hooks/use-toast"
 
 export default function LoginPage() {
   const { user } = useUser()
   const auth = useAuth()
   const router = useRouter()
+  const { toast } = useToast()
   const [email, setEmail] = useState("demo@example.com")
   const [password, setPassword] = useState("password123")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Redirect if already logged in
   useEffect(() => {
@@ -24,15 +26,26 @@ export default function LoginPage() {
     }
   }, [user, router])
 
+  const handleAuthError = (error: any) => {
+    setIsSubmitting(false)
+    toast({
+      variant: "destructive",
+      title: "Authentication Error",
+      description: error.message || "An unexpected error occurred during sign-in.",
+    })
+  }
+
   const handleEmailSignIn = (e: React.FormEvent) => {
     e.preventDefault()
     if (!auth) return
-    initiateEmailSignIn(auth, email, password)
+    setIsSubmitting(true)
+    initiateEmailSignIn(auth, email, password, handleAuthError)
   }
 
   const handleGuestSignIn = () => {
     if (!auth) return
-    initiateAnonymousSignIn(auth)
+    setIsSubmitting(true)
+    initiateAnonymousSignIn(auth, handleAuthError)
   }
 
   return (
@@ -55,6 +68,7 @@ export default function LoginPage() {
                 placeholder="owner@bizmanager.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isSubmitting}
                 required 
               />
             </div>
@@ -68,17 +82,21 @@ export default function LoginPage() {
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isSubmitting}
                 required 
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4 pt-4">
-            <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90">Sign In</Button>
+            <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90" disabled={isSubmitting}>
+              {isSubmitting ? "Signing In..." : "Sign In"}
+            </Button>
             <Button 
               type="button" 
               variant="outline" 
               className="w-full h-11"
               onClick={handleGuestSignIn}
+              disabled={isSubmitting}
             >
               Sign in as Guest
             </Button>
