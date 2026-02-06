@@ -74,19 +74,29 @@
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 20px;
+    width: 80mm; /* Standard receipt width */
+    margin: 0 auto;
+    padding: 15px;
     border: none !important;
     background: white !important;
     color: black !important;
+    font-family: 'Courier New', Courier, monospace;
   }
+  
+  /* Ensure images print */
+  #printable-receipt img {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
   /* Hide the modal overlay/buttons during print */
+  [role="dialog"] > button, 
+  [role="dialog"] .dialog-footer,
+  [data-radix-portal] > div[data-state="open"] {
+    display: none !important;
+  }
+  
   [data-radix-portal] {
     position: static !important;
-  }
-  .dialog-content {
-    border: none !important;
-    box-shadow: none !important;
   }
 }

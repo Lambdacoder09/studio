@@ -8,9 +8,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Separator } from "@/components/ui/separator"
 import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase"
 import { collection, query, where, doc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
+import Image from "next/image"
+import { PlaceHolderImages } from "@/lib/placeholder-images"
 
 interface CartItem {
   productId: string;
@@ -29,6 +32,8 @@ export default function SalesPage() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [isReceiptOpen, setIsReceiptOpen] = useState(false)
   const [currentSale, setCurrentSale] = useState<any>(null)
+
+  const businessLogo = PlaceHolderImages.find(img => img.id === 'business-logo')?.imageUrl || "https://picsum.photos/seed/biz1/200/200"
 
   // Fetch Products for the Catalog
   const productsQuery = useMemoFirebase(() => {
@@ -340,53 +345,105 @@ export default function SalesPage() {
 
       {/* Receipt Dialog */}
       <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader className="text-center">
-            <div className="mx-auto bg-emerald-100 text-emerald-600 rounded-full p-2 w-fit mb-2">
-              <CheckCircle2 className="h-8 w-8" />
-            </div>
-            <DialogTitle>Transaction Successful</DialogTitle>
-            <DialogDescription>
-              Receipt for Invoice #{currentSale?.invoiceNumber}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="border rounded-lg p-6 space-y-4 bg-muted/5 font-mono text-sm" id="printable-receipt">
-            <div className="text-center border-b pb-4">
-              <p className="font-bold text-lg">BIZMANAGER STORE</p>
-              <p className="text-xs text-muted-foreground">Digital Business Management</p>
-              <p className="text-xs mt-1">{currentSale?.date && new Date(currentSale.date).toLocaleString()}</p>
-            </div>
-            
-            <div className="space-y-2">
-              {currentSale?.items?.map((item: any, idx: number) => (
-                <div key={idx} className="flex justify-between">
-                  <span>{item.name} x{item.quantity}</span>
-                  <span>${(item.quantity * item.price).toFixed(2)}</span>
+        <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden bg-white">
+          <div className="p-6 overflow-y-auto max-h-[80vh]">
+            <div id="printable-receipt" className="space-y-6 text-slate-900 bg-white">
+              {/* Receipt Header */}
+              <div className="flex flex-col items-center text-center space-y-2 pb-6 border-b-2 border-dashed">
+                <div className="relative w-16 h-16 mb-2 grayscale opacity-80">
+                   <Image 
+                    src={businessLogo} 
+                    alt="Logo" 
+                    fill 
+                    className="object-contain"
+                    data-ai-hint="business logo"
+                  />
                 </div>
-              ))}
-            </div>
-            
-            <div className="border-t pt-4 space-y-1">
-              <div className="flex justify-between font-bold">
-                <span>TOTAL</span>
-                <span>${Number(currentSale?.totalAmount).toFixed(2)}</span>
+                <h2 className="text-2xl font-bold tracking-tight uppercase">BizManager Store</h2>
+                <p className="text-xs text-slate-500 max-w-[200px]">123 Business Avenue, Suite 100, Innovation City, IC 54321</p>
+                <p className="text-[10px] text-slate-400">Phone: (555) 123-4567 • bizmanager.com</p>
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Method</span>
-                <span>Cash/Credit</span>
+
+              {/* Transaction Info */}
+              <div className="flex justify-between items-start text-xs font-mono py-4 bg-slate-50/50 px-2 rounded">
+                <div className="space-y-1">
+                  <p className="font-bold">INVOICE: #{currentSale?.invoiceNumber}</p>
+                  <p>DATE: {currentSale?.date && new Date(currentSale.date).toLocaleDateString()}</p>
+                </div>
+                <div className="text-right space-y-1">
+                  <p>TIME: {currentSale?.date && new Date(currentSale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  <p>CASHIER: {user?.email?.split('@')[0] || 'System'}</p>
+                </div>
               </div>
-            </div>
-            
-            <div className="text-center text-[10px] pt-4 text-muted-foreground">
-              <p>Thank you for your business!</p>
-              <p className="mt-1 font-mono">{currentSale?.invoiceNumber}</p>
+
+              {/* Items Table */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-12 text-[10px] font-bold uppercase text-slate-400 px-1">
+                  <div className="col-span-6">Description</div>
+                  <div className="col-span-2 text-center">Qty</div>
+                  <div className="col-span-2 text-right">Price</div>
+                  <div className="col-span-2 text-right">Total</div>
+                </div>
+                <Separator className="h-[1px] bg-slate-200" />
+                <div className="space-y-4">
+                  {currentSale?.items?.map((item: any, idx: number) => (
+                    <div key={idx} className="grid grid-cols-12 text-[11px] items-center px-1">
+                      <div className="col-span-6 font-medium truncate pr-2">{item.name}</div>
+                      <div className="col-span-2 text-center text-slate-600">{item.quantity}</div>
+                      <div className="col-span-2 text-right text-slate-600">${item.price.toFixed(2)}</div>
+                      <div className="col-span-2 text-right font-bold">${(item.quantity * item.price).toFixed(2)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Totals Section */}
+              <div className="pt-6 border-t-2 border-dashed space-y-2">
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Subtotal</span>
+                  <span>${Number(currentSale?.totalAmount).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Tax (0%)</span>
+                  <span>$0.00</span>
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-sm font-bold uppercase tracking-wider">Amount Due</span>
+                  <span className="text-xl font-black text-primary">${Number(currentSale?.totalAmount).toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Payment Details */}
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1">
+                <div className="flex justify-between text-[10px] font-mono text-slate-500 uppercase">
+                  <span>Payment Method</span>
+                  <span>Cash/Debit</span>
+                </div>
+                <div className="flex justify-between text-[10px] font-mono text-slate-500 uppercase">
+                  <span>Transaction ID</span>
+                  <span className="truncate max-w-[150px]">{currentSale?.id}</span>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="text-center space-y-4 pt-4">
+                <div className="flex flex-col items-center">
+                   <div className="w-full border-t border-slate-300 mb-1 max-w-[120px]"></div>
+                   <span className="text-[9px] uppercase text-slate-400">Authorized Signature</span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-primary italic">"Thank you for choosing BizManager!"</p>
+                  <p className="text-[10px] text-slate-400">Please retain this receipt for your records.</p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <DialogFooter className="sm:justify-center gap-2">
-            <Button variant="outline" onClick={() => setIsReceiptOpen(false)}>Close</Button>
-            <Button className="bg-primary text-white gap-2" onClick={handlePrint}>
+          <DialogFooter className="p-4 border-t bg-slate-50 gap-2 sm:justify-center">
+            <Button variant="outline" className="flex-1 max-w-[140px]" onClick={() => setIsReceiptOpen(false)}>
+              Dismiss
+            </Button>
+            <Button className="flex-1 max-w-[140px] bg-primary text-white gap-2" onClick={handlePrint}>
               <Printer className="h-4 w-4" /> Print Receipt
             </Button>
           </DialogFooter>
