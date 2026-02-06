@@ -348,6 +348,12 @@ export default function SalesPage() {
       {/* Receipt Dialog */}
       <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
         <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden bg-white">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Sales Receipt</DialogTitle>
+            <DialogDescription>
+              Detailed transaction record for invoice #{currentSale?.invoiceNumber}
+            </DialogDescription>
+          </DialogHeader>
           <div className="p-8 overflow-y-auto max-h-[80vh]">
             <div id="printable-receipt" className="space-y-8 text-slate-900 bg-white">
               {/* Receipt Header */}
