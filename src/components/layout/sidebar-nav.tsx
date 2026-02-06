@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -15,10 +14,22 @@ import {
   ShieldCheck
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useAuth, useUser, setDocumentNonBlocking } from "@/firebase"
+import { useAuth, useUser, setDocumentNonBlocking, useFirestore } from "@/firebase"
 import { signOut } from "firebase/auth"
 import { doc, collection } from "firebase/firestore"
-import { useFirestore } from "@/firebase"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar"
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -37,10 +48,10 @@ export function SidebarNav() {
   const auth = useAuth()
   const { user } = useUser()
   const firestore = useFirestore()
+  const { state } = useSidebar()
 
   const handleLogout = async () => {
     if (auth && user && firestore) {
-      // Log the logout event
       const logRef = doc(collection(firestore, "logs"))
       setDocumentNonBlocking(logRef, {
         id: logRef.id,
@@ -56,47 +67,60 @@ export function SidebarNav() {
   }
 
   return (
-    <div className="flex h-screen w-64 flex-col bg-white border-r shadow-sm">
-      <div className="flex h-16 items-center border-b px-6">
-        <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl text-primary">
-          <div className="h-8 w-8 rounded bg-primary text-white flex items-center justify-center">B</div>
-          <span>BizManager</span>
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="border-b h-16 flex items-center px-4">
+        <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl text-primary overflow-hidden">
+          <div className="h-8 w-8 min-w-[32px] rounded bg-primary text-white flex items-center justify-center shrink-0">
+            B
+          </div>
+          <span className={cn(
+            "transition-opacity duration-300",
+            state === "collapsed" ? "opacity-0 w-0" : "opacity-100"
+          )}>
+            BizManager
+          </span>
         </Link>
-      </div>
-      <div className="flex-1 overflow-y-auto py-4">
-        <nav className="space-y-1 px-3">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                  isActive 
-                    ? "bg-primary text-white shadow-sm" 
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                <item.icon className={cn(
-                  "mr-3 h-5 w-5 flex-shrink-0 transition-colors",
-                  isActive ? "text-white" : "text-muted-foreground group-hover:text-foreground"
-                )} />
-                {item.name}
-              </Link>
-            )
-          })}
-        </nav>
-      </div>
-      <div className="border-t p-4">
-        <button 
-          onClick={handleLogout}
-          className="flex w-full items-center px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-md transition-colors"
-        >
-          <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
-          Logout
-        </button>
-      </div>
-    </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navItems.map((item) => {
+                const isActive = pathname === item.href
+                return (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.name}
+                    >
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.name}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter className="border-t p-2">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              onClick={handleLogout}
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              tooltip="Logout"
+            >
+              <LogOut />
+              <span>Logout</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
   )
 }
