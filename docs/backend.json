@@ -33,7 +33,12 @@
         },
         "sellingPrice": {
           "type": "number",
-          "description": "Price at which the product is sold."
+          "description": "Price at which the product is sold (exclusive of GST)."
+        },
+        "gstRate": {
+          "type": "number",
+          "enum": [0, 5, 12, 18],
+          "description": "GST rate applicable to this product."
         },
         "currentQuantity": {
           "type": "number",
@@ -48,6 +53,7 @@
         "category",
         "purchasePrice",
         "sellingPrice",
+        "gstRate",
         "currentQuantity"
       ]
     },
@@ -76,13 +82,24 @@
         },
         "totalAmount": {
           "type": "number",
-          "description": "Total amount of the sale."
+          "description": "Total amount of the sale (inclusive of GST)."
         },
-        "productIds": {
+        "totalTax": {
+          "type": "number",
+          "description": "Total GST amount collected."
+        },
+        "items": {
           "type": "array",
-          "description": "References to Products. (Relationship: Sale 1:N Product)",
           "items": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+              "productId": { "type": "string" },
+              "name": { "type": "string" },
+              "quantity": { "type": "number" },
+              "price": { "type": "number" },
+              "gstRate": { "type": "number" },
+              "gstAmount": { "type": "number" }
+            }
           }
         }
       },
@@ -92,7 +109,7 @@
         "date",
         "invoiceNumber",
         "totalAmount",
-        "productIds"
+        "items"
       ]
     },
     "Purchase": {

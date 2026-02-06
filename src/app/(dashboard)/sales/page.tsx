@@ -20,6 +20,8 @@ interface CartItem {
   sku: string;
   quantity: number;
   price: number;
+  gstRate: number;
+  gstAmount: number;
 }
 
 export default function SalesPage() {
@@ -51,7 +53,9 @@ export default function SalesPage() {
     p.sku.toLowerCase().includes(searchTerm.toLowerCase())
   ) || []
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  const cartSubtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  const cartTax = cart.reduce((sum, item) => sum + item.gstAmount, 0)
+  const cartTotal = cartSubtotal + cartTax
 
   const addToCart = (product: any) => {
     const existingInCart = cart.find(item => item.productId === product.id)?.quantity || 0
@@ -66,10 +70,16 @@ export default function SalesPage() {
 
     setCart(prev => {
       const existing = prev.find(item => item.productId === product.id)
+      const gstAmount = (Number(product.sellingPrice) * (Number(product.gstRate) / 100))
+      
       if (existing) {
         return prev.map(item => 
           item.productId === product.id 
-            ? { ...item, quantity: item.quantity + 1 } 
+            ? { 
+                ...item, 
+                quantity: item.quantity + 1,
+                gstAmount: (item.quantity + 1) * (item.price * (item.gstRate / 100))
+              } 
             : item
         )
       }
@@ -78,7 +88,9 @@ export default function SalesPage() {
         name: product.productName,
         sku: product.sku,
         quantity: 1, 
-        price: product.sellingPrice 
+        price: Number(product.sellingPrice),
+        gstRate: Number(product.gstRate),
+        gstAmount: gstAmount
       }]
     })
   }
@@ -99,19 +111,19 @@ export default function SalesPage() {
       date: new Date().toISOString(),
       invoiceNumber,
       totalAmount: cartTotal,
+      totalTax: cartTax,
       productIds: cart.map(item => item.productId),
       items: cart
     }
 
     setDocumentNonBlocking(saleRef, saleData, { merge: true })
 
-    // Log the sale completion
     const logRef = doc(collection(firestore, "logs"))
     setDocumentNonBlocking(logRef, {
       id: logRef.id,
       ownerId: user.uid,
       type: "sale",
-      action: `Completed Sale ${invoiceNumber} for ₹${cartTotal.toFixed(2)}`,
+      action: `Sale ${invoiceNumber} completed for ₹${cartTotal.toFixed(2)} (GST: ₹${cartTax.toFixed(2)})`,
       timestamp: new Date().toISOString(),
       metadata: { saleId: saleRef.id, invoiceNumber }
     }, { merge: true })
@@ -128,7 +140,7 @@ export default function SalesPage() {
 
     toast({
       title: "Sale Completed",
-      description: `Invoice ${invoiceNumber} has been generated.`,
+      description: `Invoice ${invoiceNumber} generated successfully.`,
     })
 
     router.push(`/sales/${saleRef.id}`)
@@ -139,7 +151,7 @@ export default function SalesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-primary">Sales Management</h1>
-          <p className="text-muted-foreground">Process new sales and manage transaction history.</p>
+          <p className="text-muted-foreground">Process sales with automated GST calculations.</p>
         </div>
         <div className="flex gap-2">
           <Button 
@@ -163,7 +175,7 @@ export default function SalesPage() {
         <Card className="border-none shadow-sm bg-white">
           <CardHeader>
             <CardTitle>Transaction Records</CardTitle>
-            <CardDescription>A list of all sales processed through BizManager.</CardDescription>
+            <CardDescription>Sales history including GST components.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
@@ -172,8 +184,8 @@ export default function SalesPage() {
                   <TableRow>
                     <TableHead className="font-semibold">Invoice #</TableHead>
                     <TableHead className="font-semibold">Date</TableHead>
-                    <TableHead className="font-semibold">Products</TableHead>
-                    <TableHead className="text-right font-semibold">Total Amount</TableHead>
+                    <TableHead className="text-right font-semibold">Total (Inc. GST)</TableHead>
+                    <TableHead className="text-right font-semibold">GST Collected</TableHead>
                     <TableHead className="text-center font-semibold">Status</TableHead>
                     <TableHead className="w-[100px]"></TableHead>
                   </TableRow>
@@ -188,7 +200,7 @@ export default function SalesPage() {
                   ) : salesHistory.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                        No sales recorded yet.
+                        No sales records.
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -196,28 +208,17 @@ export default function SalesPage() {
                       <TableRow key={sale.id}>
                         <TableCell className="font-medium font-mono">{sale.invoiceNumber}</TableCell>
                         <TableCell>{new Date(sale.date).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {sale.items?.map((item: any, idx: number) => (
-                              <Badge key={idx} variant="outline" className="text-[10px] whitespace-nowrap">
-                                {item.name} x{item.quantity}
-                              </Badge>
-                            ))}
-                          </div>
-                        </TableCell>
                         <TableCell className="text-right font-bold text-emerald-600">
                           ₹{Number(sale.totalAmount).toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground font-mono">
+                          ₹{Number(sale.totalTax || 0).toFixed(2)}
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge className="bg-emerald-100 text-emerald-800 border-none">Paid</Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            asChild
-                            title="View Receipt"
-                          >
+                          <Button variant="ghost" size="icon" asChild>
                             <Link href={`/sales/${sale.id}`}>
                               <FileText className="h-4 w-4" />
                             </Link>
@@ -236,7 +237,7 @@ export default function SalesPage() {
           <Card className="lg:col-span-2 border-none shadow-sm bg-white">
             <CardHeader>
               <CardTitle>Catalog</CardTitle>
-              <CardDescription>Select products to add to this transaction.</CardDescription>
+              <CardDescription>Select products. GST will be calculated automatically.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="relative">
@@ -253,14 +254,6 @@ export default function SalesPage() {
                 <div className="flex justify-center p-8">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ) : filteredProducts.length === 0 ? (
-                <div className="text-center p-12 bg-muted/20 rounded-lg border-dashed border-2">
-                  <Package className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground font-medium">No products available in inventory.</p>
-                  <Button variant="link" asChild>
-                    <Link href="/inventory">Go to Inventory</Link>
-                  </Button>
-                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredProducts.map((product) => (
@@ -268,14 +261,16 @@ export default function SalesPage() {
                       <CardContent className="p-4 flex justify-between items-center">
                         <div className="space-y-1">
                           <p className="font-bold">{product.productName}</p>
-                          <p className="text-xs text-muted-foreground font-mono">SKU: {product.sku}</p>
-                          <Badge variant={product.currentQuantity < 10 ? "destructive" : "secondary"}>
-                            {product.currentQuantity} in stock
-                          </Badge>
+                          <div className="flex gap-2 items-center">
+                            <Badge variant="outline" className="text-[10px]">GST {product.gstRate}%</Badge>
+                            <span className="text-xs text-muted-foreground font-mono">{product.sku}</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground">{product.currentQuantity} units available</p>
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-bold text-primary">₹{Number(product.sellingPrice).toFixed(2)}</p>
-                          <Button size="sm" variant="outline" className="mt-2 h-7 px-2 text-[10px]">Add to Cart</Button>
+                          <p className="text-[10px] text-muted-foreground">+₹{(product.sellingPrice * (product.gstRate/100)).toFixed(2)} GST</p>
+                          <Button size="sm" variant="outline" className="mt-2 h-7 px-2 text-[10px]">Add</Button>
                         </div>
                       </CardContent>
                     </Card>
@@ -295,17 +290,19 @@ export default function SalesPage() {
               <div className="max-h-[40vh] overflow-y-auto space-y-3 pr-2">
                 {cart.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    <p className="text-sm">Your cart is empty.</p>
+                    <p className="text-sm">Cart is empty.</p>
                   </div>
                 ) : (
                   cart.map((item) => (
                     <div key={item.productId} className="flex justify-between items-start gap-2 border-b pb-2">
                       <div className="space-y-0.5">
                         <p className="text-sm font-medium">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.quantity} x ₹{item.price.toFixed(2)}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {item.quantity} x ₹{item.price.toFixed(2)} (GST {item.gstRate}%)
+                        </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold">₹{(item.quantity * item.price).toFixed(2)}</p>
+                        <p className="text-sm font-bold">₹{((item.price * item.quantity) + item.gstAmount).toFixed(2)}</p>
                         <Button 
                           variant="ghost" 
                           size="icon" 
@@ -320,14 +317,18 @@ export default function SalesPage() {
                 )}
               </div>
               
-              <div className="space-y-2 pt-2">
-                <div className="flex justify-between text-sm font-medium">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span>₹{cartTotal.toFixed(2)}</span>
+              <div className="space-y-2 pt-2 border-t">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal (Excl. Tax)</span>
+                  <span className="font-mono">₹{cartSubtotal.toFixed(2)}</span>
                 </div>
-                <div className="border-t pt-2 flex justify-between font-bold text-xl">
-                  <span>Total</span>
-                  <span className="text-primary">₹{cartTotal.toFixed(2)}</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total GST Collected</span>
+                  <span className="font-mono">₹{cartTax.toFixed(2)}</span>
+                </div>
+                <div className="pt-2 flex justify-between font-bold text-xl border-t border-dashed">
+                  <span>Grand Total</span>
+                  <span className="text-primary font-mono">₹{cartTotal.toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>
@@ -337,7 +338,7 @@ export default function SalesPage() {
                 disabled={cart.length === 0}
                 onClick={handleCompleteSale}
               >
-                Complete Transaction
+                Complete Sale
               </Button>
             </CardFooter>
           </Card>
