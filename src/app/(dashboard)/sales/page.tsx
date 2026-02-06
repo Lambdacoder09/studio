@@ -1,18 +1,18 @@
+
 "use client"
 
 import { useState } from "react"
-import { ShoppingCart, Plus, Receipt, Search, Trash2, Printer, Loader2, Package } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { ShoppingCart, Plus, Receipt, Search, Trash2, FileText, Loader2, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase"
 import { collection, query, where, doc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
-import Image from "next/image"
-import { PlaceHolderImages } from "@/lib/placeholder-images"
+import Link from "next/link"
 
 interface CartItem {
   productId: string;
@@ -26,14 +26,11 @@ export default function SalesPage() {
   const { user } = useUser()
   const firestore = useFirestore()
   const { toast } = useToast()
+  const router = useRouter()
   
   const [view, setView] = useState<"history" | "new">("history")
   const [searchTerm, setSearchTerm] = useState("")
   const [cart, setCart] = useState<CartItem[]>([])
-  const [isReceiptOpen, setIsReceiptOpen] = useState(false)
-  const [currentSale, setCurrentSale] = useState<any>(null)
-
-  const businessLogo = PlaceHolderImages.find(img => img.id === 'business-logo')?.imageUrl || "https://picsum.photos/seed/biz1/200/200"
 
   const productsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null
@@ -118,23 +115,17 @@ export default function SalesPage() {
       }
     })
 
-    setCurrentSale(saleData)
-    setIsReceiptOpen(true)
-    setCart([])
-    
     toast({
       title: "Sale Completed",
       description: `Invoice ${invoiceNumber} has been generated.`,
     })
-  }
 
-  const handlePrint = () => {
-    window.print()
+    router.push(`/sales/${saleRef.id}`)
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-primary">Sales Management</h1>
           <p className="text-muted-foreground">Process new sales and manage transaction history.</p>
@@ -145,20 +136,20 @@ export default function SalesPage() {
             onClick={() => setView("history")}
             className="gap-2"
           >
-            <Receipt className="h-4 w-4" /> Sales History
+            <Receipt className="h-4 w-4" /> History
           </Button>
           <Button 
             variant={view === "new" ? "default" : "outline"} 
             className="bg-secondary hover:bg-secondary/90 text-white gap-2"
             onClick={() => setView("new")}
           >
-            <Plus className="h-4 w-4" /> New Sale Entry
+            <Plus className="h-4 w-4" /> New Sale
           </Button>
         </div>
       </div>
 
       {view === "history" ? (
-        <Card className="border-none shadow-sm bg-white print:hidden">
+        <Card className="border-none shadow-sm bg-white">
           <CardHeader>
             <CardTitle>Transaction Records</CardTitle>
             <CardDescription>A list of all sales processed through BizManager.</CardDescription>
@@ -213,10 +204,12 @@ export default function SalesPage() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            onClick={() => { setCurrentSale(sale); setIsReceiptOpen(true); }}
+                            asChild
                             title="View Receipt"
                           >
-                            <Printer className="h-4 w-4" />
+                            <Link href={`/sales/${sale.id}`}>
+                              <FileText className="h-4 w-4" />
+                            </Link>
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -228,7 +221,7 @@ export default function SalesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2 border-none shadow-sm bg-white">
             <CardHeader>
               <CardTitle>Catalog</CardTitle>
@@ -238,7 +231,7 @@ export default function SalesPage() {
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search products by name or SKU..."
+                  placeholder="Search products..."
                   className="pl-8"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -253,7 +246,9 @@ export default function SalesPage() {
                 <div className="text-center p-12 bg-muted/20 rounded-lg border-dashed border-2">
                   <Package className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground font-medium">No products available in inventory.</p>
-                  <Button variant="link" onClick={() => window.location.href = '/inventory'}>Go to Inventory</Button>
+                  <Button variant="link" asChild>
+                    <Link href="/inventory">Go to Inventory</Link>
+                  </Button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -262,7 +257,7 @@ export default function SalesPage() {
                       <CardContent className="p-4 flex justify-between items-center">
                         <div className="space-y-1">
                           <p className="font-bold">{product.productName}</p>
-                          <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
+                          <p className="text-xs text-muted-foreground font-mono">SKU: {product.sku}</p>
                           <Badge variant={product.currentQuantity < 10 ? "destructive" : "secondary"}>
                             {product.currentQuantity} in stock
                           </Badge>
@@ -315,11 +310,11 @@ export default function SalesPage() {
               </div>
               
               <div className="space-y-2 pt-2">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm font-medium">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>${cartTotal.toFixed(2)}</span>
                 </div>
-                <div className="border-t pt-2 flex justify-between font-bold text-lg">
+                <div className="border-t pt-2 flex justify-between font-bold text-xl">
                   <span>Total</span>
                   <span className="text-primary">${cartTotal.toFixed(2)}</span>
                 </div>
@@ -327,7 +322,7 @@ export default function SalesPage() {
             </CardContent>
             <CardFooter>
               <Button 
-                className="w-full bg-secondary hover:bg-secondary/90 text-white" 
+                className="w-full bg-secondary hover:bg-secondary/90 text-white h-11" 
                 disabled={cart.length === 0}
                 onClick={handleCompleteSale}
               >
@@ -337,99 +332,6 @@ export default function SalesPage() {
           </Card>
         </div>
       )}
-
-      {/* Receipt Dialog */}
-      <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-visible bg-white print:p-0 print:border-none print:shadow-none">
-          <DialogHeader className="p-6 pb-0 print:hidden">
-            <DialogTitle>Sales Receipt Generated</DialogTitle>
-            <DialogDescription>
-              Transaction record for invoice #{currentSale?.invoiceNumber}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div id="printable-receipt" className="p-8 space-y-8 bg-white text-foreground font-sans print:p-4">
-            {/* Header */}
-            <div className="text-center space-y-4">
-              <div className="relative w-16 h-16 mx-auto">
-                <Image 
-                  src={businessLogo} 
-                  alt="Logo" 
-                  fill 
-                  className="object-contain grayscale"
-                  data-ai-hint="business logo"
-                />
-              </div>
-              <div className="space-y-1">
-                <h2 className="text-2xl font-bold uppercase tracking-tighter">BizManager Store</h2>
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">Premium Inventory Solutions</p>
-              </div>
-            </div>
-
-            {/* Info */}
-            <div className="grid grid-cols-2 gap-8 border-y border-border py-4 text-[11px]">
-              <div className="space-y-1">
-                <p className="font-bold text-muted-foreground uppercase text-xs">Transaction Info</p>
-                <p className="font-mono">INV: #{currentSale?.invoiceNumber}</p>
-                <p className="font-mono">DATE: {currentSale?.date && new Date(currentSale.date).toLocaleDateString()}</p>
-              </div>
-              <div className="text-right space-y-1">
-                <p className="font-mono pt-5">TIME: {currentSale?.date && new Date(currentSale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                <p className="font-mono">STAFF: {user?.email?.split('@')[0].toUpperCase()}</p>
-              </div>
-            </div>
-
-            {/* Items */}
-            <div className="space-y-4 min-h-[100px]">
-              <div className="grid grid-cols-12 text-[10px] font-bold uppercase text-muted-foreground border-b pb-2">
-                <div className="col-span-6">Description</div>
-                <div className="col-span-2 text-center">Qty</div>
-                <div className="col-span-2 text-right">Price</div>
-                <div className="col-span-2 text-right">Total</div>
-              </div>
-              <div className="space-y-3">
-                {currentSale?.items?.map((item: any, idx: number) => (
-                  <div key={idx} className="grid grid-cols-12 text-[11px] items-center">
-                    <div className="col-span-6">
-                      <p className="font-bold uppercase leading-none">{item.name}</p>
-                      <p className="text-[9px] text-muted-foreground font-mono">SKU: {item.sku || 'N/A'}</p>
-                    </div>
-                    <div className="col-span-2 text-center font-mono">{item.quantity}</div>
-                    <div className="col-span-2 text-right font-mono">${item.price.toFixed(2)}</div>
-                    <div className="col-span-2 text-right font-bold font-mono">${(item.quantity * item.price).toFixed(2)}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Total */}
-            <div className="pt-6 border-t border-border flex justify-between items-center">
-              <p className="text-xs font-bold uppercase tracking-widest">Amount Due</p>
-              <p className="text-3xl font-bold tracking-tighter text-primary font-mono">
-                ${Number(currentSale?.totalAmount).toFixed(2)}
-              </p>
-            </div>
-
-            {/* Footer */}
-            <div className="pt-8 text-center space-y-6">
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-32 h-px bg-border"></div>
-                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Authorized Signature</span>
-              </div>
-              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Thank you for your business</p>
-            </div>
-          </div>
-
-          <DialogFooter className="p-4 border-t bg-muted/50 gap-2 print:hidden sm:justify-center">
-            <Button variant="outline" className="flex-1" onClick={() => setIsReceiptOpen(false)}>
-              Dismiss
-            </Button>
-            <Button className="flex-1 bg-primary text-white gap-2 print-show" onClick={handlePrint}>
-              <Printer className="h-4 w-4" /> Print Document
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
