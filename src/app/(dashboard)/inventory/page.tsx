@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Search, Edit2, Trash2, MoreHorizontal, Loader2 } from "lucide-react"
+import { Plus, Search, Edit2, Trash2, MoreHorizontal, Loader2, X, PlusCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -47,9 +47,10 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase"
 import { collection, query, where, doc } from "firebase/firestore"
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useToast } from "@/hooks/use-toast"
@@ -64,7 +65,12 @@ const productSchema = z.object({
   currentQuantity: z.coerce.number().min(0, "Quantity must be positive"),
 })
 
+const bulkAddSchema = z.object({
+  products: z.array(productSchema).min(1),
+})
+
 type ProductFormValues = z.infer<typeof productSchema>
+type BulkAddFormValues = z.infer<typeof bulkAddSchema>
 
 export default function InventoryPage() {
   const { user, isUserLoading } = useUser()
@@ -88,17 +94,24 @@ export default function InventoryPage() {
 
   const { data: products, isLoading: isDataLoading } = useCollection(productsQuery)
 
-  const addForm = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
+  const bulkAddForm = useForm<BulkAddFormValues>({
+    resolver: zodResolver(bulkAddSchema),
     defaultValues: {
-      productName: "",
-      sku: "",
-      category: "",
-      purchasePrice: 0,
-      sellingPrice: 0,
-      gstRate: 5,
-      currentQuantity: 0,
+      products: [{
+        productName: "",
+        sku: "",
+        category: "",
+        purchasePrice: 0,
+        sellingPrice: 0,
+        gstRate: 5,
+        currentQuantity: 0,
+      }],
     },
+  })
+
+  const { fields, append, remove } = useFieldArray({
+    control: bulkAddForm.control,
+    name: "products",
   })
 
   const editForm = useForm<ProductFormValues>({
@@ -124,34 +137,46 @@ export default function InventoryPage() {
     p.sku.toLowerCase().includes(searchTerm.toLowerCase())
   ) || []
 
-  function onAdd(values: ProductFormValues) {
+  function onBulkAdd(values: BulkAddFormValues) {
     if (!user || !firestore) return
 
-    const productRef = doc(collection(firestore, "products"))
-    const newProduct = {
-      ...values,
-      id: productRef.id,
-      ownerId: user.uid,
-    }
+    values.products.forEach((product) => {
+      const productRef = doc(collection(firestore, "products"))
+      const newProduct = {
+        ...product,
+        id: productRef.id,
+        ownerId: user.uid,
+      }
 
-    setDocumentNonBlocking(productRef, newProduct, { merge: true })
-    
-    // Log the event
-    const logRef = doc(collection(firestore, "logs"))
-    setDocumentNonBlocking(logRef, {
-      id: logRef.id,
-      ownerId: user.uid,
-      type: "inventory",
-      action: `Added new product: ${values.productName}`,
-      timestamp: new Date().toISOString()
-    }, { merge: true })
+      setDocumentNonBlocking(productRef, newProduct, { merge: true })
+      
+      // Log the event
+      const logRef = doc(collection(firestore, "logs"))
+      setDocumentNonBlocking(logRef, {
+        id: logRef.id,
+        ownerId: user.uid,
+        type: "inventory",
+        action: `Added product: ${product.productName} (Bulk Add)`,
+        timestamp: new Date().toISOString()
+      }, { merge: true })
+    })
 
     setIsAddDialogOpen(false)
-    addForm.reset()
+    bulkAddForm.reset({
+      products: [{
+        productName: "",
+        sku: "",
+        category: "",
+        purchasePrice: 0,
+        sellingPrice: 0,
+        gstRate: 5,
+        currentQuantity: 0,
+      }],
+    })
     
     toast({
-      title: "Product Added",
-      description: `${values.productName} has been added.`,
+      title: "Inventory Updated",
+      description: `${values.products.length} products have been added.`,
     })
   }
 
@@ -216,7 +241,7 @@ export default function InventoryPage() {
         </div>
         
         <Button className="bg-secondary hover:bg-secondary/90 text-white gap-2" onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="h-4 w-4" /> Add New Product
+          <Plus className="h-4 w-4" /> Add Products
         </Button>
       </div>
 
@@ -309,125 +334,165 @@ export default function InventoryPage() {
         </CardContent>
       </Card>
 
-      {/* Add Dialog */}
+      {/* Bulk Add Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <Form {...addForm}>
-            <form onSubmit={addForm.handleSubmit(onAdd)} className="space-y-4">
-              <DialogHeader>
-                <DialogTitle>Add New Product</DialogTitle>
-                <DialogDescription>
-                  Enter product details. Stock levels and GST will be updated automatically.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={addForm.control}
-                  name="productName"
-                  render={({ field }) => (
-                    <FormItem className="col-span-2">
-                      <FormLabel>Product Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Paracetamol 500mg" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addForm.control}
-                  name="sku"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>SKU / Batch</FormLabel>
-                      <FormControl>
-                        <Input placeholder="BAT-001" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addForm.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Antibiotics" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addForm.control}
-                  name="purchasePrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Purchase Price (₹)</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addForm.control}
-                  name="sellingPrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Selling Price (Excl. GST) (₹)</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={addForm.control}
-                  name="gstRate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>GST Rate (%)</FormLabel>
-                      <Select onValueChange={(val) => field.onChange(Number(val))} defaultValue={field.value.toString()}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select GST" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="0">0% (Exempt)</SelectItem>
-                          <SelectItem value="5">5% (General)</SelectItem>
-                          <SelectItem value="12">12% (Bulk)</SelectItem>
-                          <SelectItem value="18">18% (Supplements)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addForm.control}
-                  name="currentQuantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Current Stock</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        <DialogContent className="sm:max-w-[900px] max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Add New Products</DialogTitle>
+            <DialogDescription>
+              Add one or more products to your inventory.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...bulkAddForm}>
+            <form onSubmit={bulkAddForm.handleSubmit(onBulkAdd)} className="space-y-6 overflow-y-auto px-1">
+              <div className="space-y-4">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="relative p-4 border rounded-lg bg-muted/20 space-y-4">
+                    {fields.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-2 h-6 w-6 text-muted-foreground hover:text-destructive"
+                        onClick={() => remove(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <FormField
+                        control={bulkAddForm.control}
+                        name={`products.${index}.productName`}
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-2">
+                            <FormLabel>Product Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. Paracetamol 500mg" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={bulkAddForm.control}
+                        name={`products.${index}.sku`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>SKU / Batch</FormLabel>
+                            <FormControl>
+                              <Input placeholder="BAT-001" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={bulkAddForm.control}
+                        name={`products.${index}.category`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Category</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Antibiotics" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <FormField
+                        control={bulkAddForm.control}
+                        name={`products.${index}.purchasePrice`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Purchase (₹)</FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={bulkAddForm.control}
+                        name={`products.${index}.sellingPrice`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Selling (₹)</FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={bulkAddForm.control}
+                        name={`products.${index}.gstRate`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>GST %</FormLabel>
+                            <Select onValueChange={(val) => field.onChange(Number(val))} defaultValue={field.value.toString()}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="GST" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="0">0%</SelectItem>
+                                <SelectItem value="5">5%</SelectItem>
+                                <SelectItem value="12">12%</SelectItem>
+                                <SelectItem value="18">18%</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={bulkAddForm.control}
+                        name={`products.${index}.currentQuantity`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Stock</FormLabel>
+                            <FormControl>
+                              <Input type="number" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              <DialogFooter className="pt-4">
+              <div className="flex justify-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="gap-2 border-dashed border-2"
+                  onClick={() => append({
+                    productName: "",
+                    sku: "",
+                    category: "",
+                    purchasePrice: 0,
+                    sellingPrice: 0,
+                    gstRate: 5,
+                    currentQuantity: 0,
+                  })}
+                >
+                  <PlusCircle className="h-4 w-4" /> Add Another Row
+                </Button>
+              </div>
+
+              <DialogFooter className="sticky bottom-0 bg-background pt-4 border-t">
                 <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                <Button type="submit" className="bg-primary text-white">Save Product</Button>
+                <Button type="submit" className="bg-primary text-white">Save All Products</Button>
               </DialogFooter>
             </form>
           </Form>
