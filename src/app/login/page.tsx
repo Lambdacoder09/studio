@@ -18,14 +18,12 @@ export default function LoginPage() {
   const firestore = useFirestore()
   const router = useRouter()
   const { toast } = useToast()
-  const [email, setEmail] = useState("demo@example.com")
-  const [password, setPassword] = useState("password123")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Redirect if already logged in and log the event
   useEffect(() => {
     if (user && firestore) {
-      // Log successful login
       const logRef = doc(collection(firestore, "logs"))
       setDocumentNonBlocking(logRef, {
         id: logRef.id,
@@ -93,6 +91,7 @@ export default function LoginPage() {
               <Input 
                 id="password" 
                 type="password" 
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isSubmitting}
