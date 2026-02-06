@@ -1,11 +1,40 @@
 
+"use client"
+
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { useAuth, useUser, initiateEmailSignIn, initiateAnonymousSignIn } from "@/firebase"
 
 export default function LoginPage() {
+  const { user } = useUser()
+  const auth = useAuth()
+  const router = useRouter()
+  const [email, setEmail] = useState("demo@example.com")
+  const [password, setPassword] = useState("password123")
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard")
+    }
+  }, [user, router])
+
+  const handleEmailSignIn = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!auth) return
+    initiateEmailSignIn(auth, email, password)
+  }
+
+  const handleGuestSignIn = () => {
+    if (!auth) return
+    initiateAnonymousSignIn(auth)
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-lg border-t-4 border-t-primary">
@@ -16,28 +45,49 @@ export default function LoginPage() {
           <CardTitle className="text-2xl font-bold">BizManager Login</CardTitle>
           <CardDescription>Enter your credentials to manage your business</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 pt-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="owner@bizmanager.com" defaultValue="demo@example.com" required />
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <Link href="#" className="text-xs text-primary hover:underline">Forgot password?</Link>
+        <form onSubmit={handleEmailSignIn}>
+          <CardContent className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="owner@bizmanager.com" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required 
+              />
             </div>
-            <Input id="password" type="password" defaultValue="password123" required />
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4 pt-4">
-          <Link href="/dashboard" className="w-full">
-            <Button className="w-full h-11 bg-primary hover:bg-primary/90">Sign In</Button>
-          </Link>
-          <div className="text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link href="/register" className="text-primary hover:underline font-medium">Register business</Link>
-          </div>
-        </CardFooter>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link href="#" className="text-xs text-primary hover:underline">Forgot password?</Link>
+              </div>
+              <Input 
+                id="password" 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required 
+              />
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4 pt-4">
+            <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90">Sign In</Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full h-11"
+              onClick={handleGuestSignIn}
+            >
+              Sign in as Guest
+            </Button>
+            <div className="text-center text-sm text-muted-foreground">
+              Don't have an account?{" "}
+              <Link href="/register" className="text-primary hover:underline font-medium">Register business</Link>
+            </div>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   )

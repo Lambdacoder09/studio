@@ -2,7 +2,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { 
   LayoutDashboard, 
   Package, 
@@ -14,6 +14,8 @@ import {
   LogOut
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/firebase"
+import { signOut } from "firebase/auth"
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -27,6 +29,15 @@ const navItems = [
 
 export function SidebarNav() {
   const pathname = usePathname()
+  const router = useRouter()
+  const auth = useAuth()
+
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth)
+      router.push("/login")
+    }
+  }
 
   return (
     <div className="flex h-screen w-64 flex-col bg-white border-r shadow-sm">
@@ -62,7 +73,10 @@ export function SidebarNav() {
         </nav>
       </div>
       <div className="border-t p-4">
-        <button className="flex w-full items-center px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-md transition-colors">
+        <button 
+          onClick={handleLogout}
+          className="flex w-full items-center px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+        >
           <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
           Logout
         </button>
