@@ -164,7 +164,7 @@ export default function PurchasesPage() {
                     name="purchasePrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Unit Cost ($)</FormLabel>
+                        <FormLabel>Unit Cost (₹)</FormLabel>
                         <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -187,7 +187,7 @@ export default function PurchasesPage() {
             <Truck className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalProcurement.toFixed(2)}</div>
+            <div className="text-2xl font-bold">₹{totalProcurement.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">Total spent on supplies</p>
           </CardContent>
         </Card>
@@ -226,7 +226,7 @@ export default function PurchasesPage() {
                         <Badge variant="outline" className="bg-primary/5 text-primary">+{purchase.quantity}</Badge>
                       </TableCell>
                       <TableCell className="text-right font-bold text-primary">
-                        ${(Number(purchase.quantity) * Number(purchase.purchasePrice)).toFixed(2)}
+                        ₹{(Number(purchase.quantity) * Number(purchase.purchasePrice)).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button 

@@ -58,11 +58,12 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="currency">Base Currency</Label>
-                  <Select defaultValue="usd">
+                  <Select defaultValue="inr">
                     <SelectTrigger id="currency">
                       <SelectValue placeholder="Select Currency" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="inr">INR - Indian Rupee (₹)</SelectItem>
                       <SelectItem value="usd">USD - US Dollar ($)</SelectItem>
                       <SelectItem value="eur">EUR - Euro (€)</SelectItem>
                       <SelectItem value="gbp">GBP - British Pound (£)</SelectItem>
@@ -71,13 +72,13 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="timezone">Timezone</Label>
-                  <Select defaultValue="utc">
+                  <Select defaultValue="ist">
                     <SelectTrigger id="timezone">
                       <SelectValue placeholder="Select Timezone" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="ist">IST (India Standard Time)</SelectItem>
                       <SelectItem value="utc">UTC (Coordinated Universal Time)</SelectItem>
-                      <SelectItem value="est">EST (Eastern Standard Time)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -123,9 +123,9 @@ export default function PurchaseVoucherPage({ params }: { params: Promise<{ purc
                   <p className="text-xs text-muted-foreground font-mono mt-1 tracking-wider">SKU: {purchase.sku || 'N/A'}</p>
                 </div>
                 <div className="col-span-2 text-center font-mono text-lg">+{purchase.quantity}</div>
-                <div className="col-span-2 text-right font-mono">${Number(purchase.purchasePrice).toFixed(2)}</div>
+                <div className="col-span-2 text-right font-mono">₹{Number(purchase.purchasePrice).toFixed(2)}</div>
                 <div className="col-span-2 text-right font-bold font-mono text-lg">
-                  ${totalCost.toFixed(2)}
+                  ₹{totalCost.toFixed(2)}
                 </div>
               </div>
             </div>
@@ -135,12 +135,12 @@ export default function PurchaseVoucherPage({ params }: { params: Promise<{ purc
               <div className="w-1/2 space-y-4">
                 <div className="flex justify-between items-center text-xs text-muted-foreground uppercase tracking-widest border-b pb-2">
                   <span>Gross Procurement</span>
-                  <span className="font-mono">${totalCost.toFixed(2)}</span>
+                  <span className="font-mono">₹{totalCost.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-bold uppercase tracking-widest">Total Voucher Value</span>
                   <span className="text-4xl font-black tracking-tighter text-primary font-mono">
-                    ${totalCost.toFixed(2)}
+                    ₹{totalCost.toFixed(2)}
                   </span>
                 </div>
               </div>

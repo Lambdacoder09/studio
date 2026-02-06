@@ -118,8 +118,8 @@ export default function SaleReceiptPage({ params }: { params: Promise<{ saleId: 
                       <p className="text-[10px] text-muted-foreground font-mono mt-1">SKU: {item.sku || 'N/A'}</p>
                     </div>
                     <div className="col-span-2 text-center font-mono">x{item.quantity}</div>
-                    <div className="col-span-2 text-right font-mono">${item.price.toFixed(2)}</div>
-                    <div className="col-span-2 text-right font-bold font-mono">${(item.quantity * item.price).toFixed(2)}</div>
+                    <div className="col-span-2 text-right font-mono">₹{item.price.toFixed(2)}</div>
+                    <div className="col-span-2 text-right font-bold font-mono">₹{(item.quantity * item.price).toFixed(2)}</div>
                   </div>
                 ))}
               </div>
@@ -129,7 +129,7 @@ export default function SaleReceiptPage({ params }: { params: Promise<{ saleId: 
             <div className="pt-8 border-t-2 border-border flex flex-col items-end gap-2">
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Amount Paid</p>
               <p className="text-5xl font-black tracking-tighter text-primary font-mono">
-                ${Number(sale.totalAmount).toFixed(2)}
+                ₹{Number(sale.totalAmount).toFixed(2)}
               </p>
             </div>
 

@@ -196,7 +196,7 @@ export default function InventoryPage() {
                     name="purchasePrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Purchase Price ($)</FormLabel>
+                        <FormLabel>Purchase Price (₹)</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" {...field} />
                         </FormControl>
@@ -209,7 +209,7 @@ export default function InventoryPage() {
                     name="sellingPrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Selling Price ($)</FormLabel>
+                        <FormLabel>Selling Price (₹)</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" {...field} />
                         </FormControl>
@@ -298,8 +298,8 @@ export default function InventoryPage() {
                       <TableCell>
                         <Badge variant="secondary" className="font-normal">{product.category}</Badge>
                       </TableCell>
-                      <TableCell className="text-right">${Number(product.purchasePrice).toFixed(2)}</TableCell>
-                      <TableCell className="text-right">${Number(product.sellingPrice).toFixed(2)}</TableCell>
+                      <TableCell className="text-right">₹{Number(product.purchasePrice).toFixed(2)}</TableCell>
+                      <TableCell className="text-right">₹{Number(product.sellingPrice).toFixed(2)}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center">
                           <span className={product.currentQuantity < 10 ? "text-orange-600 font-bold" : "font-medium"}>

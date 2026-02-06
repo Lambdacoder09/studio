@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -79,7 +80,7 @@ export default function ReportsPage() {
                 <CardTitle className="text-sm font-medium text-muted-foreground uppercase">Net Income</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-emerald-600">${totalSales.toFixed(2)}</div>
+                <div className="text-3xl font-bold text-emerald-600">₹{totalSales.toFixed(2)}</div>
                 <p className="text-xs text-muted-foreground mt-1">Cash inflow from all sales</p>
               </CardContent>
             </Card>
@@ -88,7 +89,7 @@ export default function ReportsPage() {
                 <CardTitle className="text-sm font-medium text-muted-foreground uppercase">Total Outflow</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-rose-600">${totalExpenses.toFixed(2)}</div>
+                <div className="text-3xl font-bold text-rose-600">₹{totalExpenses.toFixed(2)}</div>
                 <p className="text-xs text-muted-foreground mt-1">Sum of all expenses recorded</p>
               </CardContent>
             </Card>
@@ -97,7 +98,7 @@ export default function ReportsPage() {
                 <CardTitle className="text-sm font-medium text-muted-foreground uppercase">Gross Profit</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-primary">${grossProfit.toFixed(2)}</div>
+                <div className="text-3xl font-bold text-primary">₹{grossProfit.toFixed(2)}</div>
                 <p className="text-xs text-muted-foreground mt-1 flex items-center">
                   <TrendingUp className={`h-3 w-3 mr-1 ${profitMargin >= 0 ? 'text-emerald-500' : 'text-rose-500'}`} /> 
                   Margin ({profitMargin.toFixed(1)}%)
@@ -119,11 +120,11 @@ export default function ReportsPage() {
                   </h3>
                   <div className="flex justify-between items-center py-1">
                     <span className="text-sm">Product Sales</span>
-                    <span className="font-medium font-mono">${totalSales.toFixed(2)}</span>
+                    <span className="font-medium font-mono">₹{totalSales.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center py-1 font-bold border-t border-emerald-100 pt-2">
                     <span>Total Income</span>
-                    <span className="font-mono text-emerald-600">${totalSales.toFixed(2)}</span>
+                    <span className="font-mono text-emerald-600">₹{totalSales.toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -137,20 +138,20 @@ export default function ReportsPage() {
                     expenses?.map((e, idx) => (
                       <div key={idx} className="flex justify-between items-center py-1">
                         <span className="text-sm">{e.expenseName}</span>
-                        <span className="font-medium font-mono">${Number(e.amount).toFixed(2)}</span>
+                        <span className="font-medium font-mono">₹{Number(e.amount).toFixed(2)}</span>
                       </div>
                     ))
                   )}
                   <div className="flex justify-between items-center py-1 font-bold border-t border-rose-100 pt-2">
                     <span>Total Expenses</span>
-                    <span className="font-mono text-rose-600">${totalExpenses.toFixed(2)}</span>
+                    <span className="font-mono text-rose-600">₹{totalExpenses.toFixed(2)}</span>
                   </div>
                 </div>
 
                 <div className="p-4 bg-muted/30 rounded-lg flex justify-between items-center">
                   <span className="font-bold text-lg">Net Profit/Loss</span>
                   <span className={`text-xl font-bold font-mono ${grossProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    ${grossProfit.toFixed(2)}
+                    ₹{grossProfit.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -168,7 +169,7 @@ export default function ReportsPage() {
               <div className="flex flex-col md:flex-row items-center justify-between p-6 bg-primary/5 rounded-xl border border-primary/10 mb-8">
                 <div className="space-y-1 text-center md:text-left">
                   <p className="text-sm font-medium text-primary uppercase tracking-widest">Total Stock Value (Cost)</p>
-                  <p className="text-5xl font-bold text-primary">${stockValue.toFixed(2)}</p>
+                  <p className="text-5xl font-bold text-primary">₹{stockValue.toFixed(2)}</p>
                 </div>
                 <div className="mt-4 md:mt-0 flex gap-4">
                   <div className="p-4 bg-white rounded-lg shadow-sm border text-center">
@@ -194,7 +195,7 @@ export default function ReportsPage() {
                       <div key={idx} className="space-y-1.5">
                         <div className="flex justify-between text-sm">
                           <span className="font-medium">{cat}</span>
-                          <span className="text-muted-foreground font-mono">${catValue.toFixed(2)} ({percent.toFixed(0)}%)</span>
+                          <span className="text-muted-foreground font-mono">₹{catValue.toFixed(2)} ({percent.toFixed(0)}%)</span>
                         </div>
                         <div className="h-2.5 w-full bg-muted rounded-full overflow-hidden">
                           <div 

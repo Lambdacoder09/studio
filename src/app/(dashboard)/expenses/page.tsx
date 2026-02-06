@@ -130,7 +130,7 @@ export default function ExpensesPage() {
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Amount ($)</FormLabel>
+                      <FormLabel>Amount (₹)</FormLabel>
                       <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -152,7 +152,7 @@ export default function ExpensesPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-rose-600">${totalSpent.toFixed(2)}</span>
+              <span className="text-4xl font-bold text-rose-600">₹{totalSpent.toFixed(2)}</span>
             </div>
           </CardContent>
         </Card>
@@ -189,7 +189,7 @@ export default function ExpensesPage() {
                         <Badge variant="secondary" className="font-normal capitalize">{expense.category}</Badge>
                       </TableCell>
                       <TableCell className="text-right font-bold text-rose-600">
-                        -${Number(expense.amount).toFixed(2)}
+                        -₹{Number(expense.amount).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground text-sm">
                         {new Date(expense.date).toLocaleDateString()}

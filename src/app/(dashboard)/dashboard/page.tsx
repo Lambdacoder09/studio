@@ -11,7 +11,8 @@ import {
   Package, 
   Receipt,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  IndianRupee
 } from "lucide-react"
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, where } from "firebase/firestore"
@@ -67,10 +68,10 @@ export default function DashboardPage() {
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-            <DollarSign className="h-4 w-4 text-secondary" />
+            <IndianRupee className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalSales.toFixed(2)}</div>
+            <div className="text-2xl font-bold">₹{totalSales.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground flex items-center mt-1">
               <span className="text-emerald-500 flex items-center mr-1"><ArrowUpRight className="h-3 w-3" /> Updated</span> just now
             </p>
@@ -82,7 +83,7 @@ export default function DashboardPage() {
             <Receipt className="h-4 w-4 text-rose-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalExpenses.toFixed(2)}</div>
+            <div className="text-2xl font-bold">₹{totalExpenses.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground mt-1">Total recorded costs</p>
           </CardContent>
         </Card>
@@ -92,7 +93,7 @@ export default function DashboardPage() {
             <Package className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalInventoryValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">₹{totalInventoryValue.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground mt-1">Current assets in inventory</p>
           </CardContent>
         </Card>
@@ -126,7 +127,7 @@ export default function DashboardPage() {
                       <p className="text-xs text-muted-foreground">{new Date(sale.date).toLocaleDateString()}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-emerald-600">+${Number(sale.totalAmount).toFixed(2)}</p>
+                      <p className="text-sm font-bold text-emerald-600">+₹{Number(sale.totalAmount).toFixed(2)}</p>
                       <p className="text-xs text-muted-foreground">{sale.items?.length || 0} item(s)</p>
                     </div>
                   </div>

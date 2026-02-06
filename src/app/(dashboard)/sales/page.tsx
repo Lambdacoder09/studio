@@ -111,7 +111,7 @@ export default function SalesPage() {
       id: logRef.id,
       ownerId: user.uid,
       type: "sale",
-      action: `Completed Sale ${invoiceNumber} for $${cartTotal.toFixed(2)}`,
+      action: `Completed Sale ${invoiceNumber} for ₹${cartTotal.toFixed(2)}`,
       timestamp: new Date().toISOString(),
       metadata: { saleId: saleRef.id, invoiceNumber }
     }, { merge: true })
@@ -206,7 +206,7 @@ export default function SalesPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-bold text-emerald-600">
-                          ${Number(sale.totalAmount).toFixed(2)}
+                          ₹{Number(sale.totalAmount).toFixed(2)}
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge className="bg-emerald-100 text-emerald-800 border-none">Paid</Badge>
@@ -274,7 +274,7 @@ export default function SalesPage() {
                           </Badge>
                         </div>
                         <div className="text-right">
-                          <p className="text-lg font-bold text-primary">${Number(product.sellingPrice).toFixed(2)}</p>
+                          <p className="text-lg font-bold text-primary">₹{Number(product.sellingPrice).toFixed(2)}</p>
                           <Button size="sm" variant="outline" className="mt-2 h-7 px-2 text-[10px]">Add to Cart</Button>
                         </div>
                       </CardContent>
@@ -302,10 +302,10 @@ export default function SalesPage() {
                     <div key={item.productId} className="flex justify-between items-start gap-2 border-b pb-2">
                       <div className="space-y-0.5">
                         <p className="text-sm font-medium">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.quantity} x ${item.price.toFixed(2)}</p>
+                        <p className="text-xs text-muted-foreground">{item.quantity} x ₹{item.price.toFixed(2)}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold">${(item.quantity * item.price).toFixed(2)}</p>
+                        <p className="text-sm font-bold">₹{(item.quantity * item.price).toFixed(2)}</p>
                         <Button 
                           variant="ghost" 
                           size="icon" 
@@ -323,11 +323,11 @@ export default function SalesPage() {
               <div className="space-y-2 pt-2">
                 <div className="flex justify-between text-sm font-medium">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${cartTotal.toFixed(2)}</span>
+                  <span>₹{cartTotal.toFixed(2)}</span>
                 </div>
                 <div className="border-t pt-2 flex justify-between font-bold text-xl">
                   <span>Total</span>
-                  <span className="text-primary">${cartTotal.toFixed(2)}</span>
+                  <span className="text-primary">₹{cartTotal.toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>
