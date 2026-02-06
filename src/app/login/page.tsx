@@ -10,8 +10,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label"
 import { useAuth, useUser, initiateEmailSignIn, initiateAnonymousSignIn, setDocumentNonBlocking, useFirestore } from "@/firebase"
 import { useToast } from "@/hooks/use-toast"
-import { doc, collection, getDocs, query, where, limit } from "firebase/firestore"
-import { DUMMY_MEDICINES } from "@/lib/dummy-data"
+import { doc, collection, getDocs, query, where, limit, writeBatch } from "firebase/firestore"
+import { DUMMY_MEDICINES, DUMMY_EXPENSES, getDummyPurchases, getDummySales } from "@/lib/dummy-data"
 import { TestTubeDiagonal } from "lucide-react"
 
 export default function LoginPage() {
@@ -35,17 +35,51 @@ export default function LoginPage() {
           if (querySnapshot.empty) {
             toast({
               title: "Seeding Test Data",
-              description: "Populating your inventory with dummy products...",
+              description: "Populating complete business history...",
             })
             
-            DUMMY_MEDICINES.forEach(item => {
+            // Seed Products
+            const productIds: string[] = []
+            const seededProducts: any[] = []
+
+            for (const item of DUMMY_MEDICINES) {
               const productRef = doc(collection(firestore, "products"))
-              setDocumentNonBlocking(productRef, {
-                ...item,
-                id: productRef.id,
+              const data = { ...item, id: productRef.id, ownerId: user.uid }
+              setDocumentNonBlocking(productRef, data, { merge: true })
+              seededProducts.push(data)
+            }
+
+            // Seed Expenses
+            for (const expense of DUMMY_EXPENSES) {
+              const expenseRef = doc(collection(firestore, "expenses"))
+              setDocumentNonBlocking(expenseRef, {
+                ...expense,
+                id: expenseRef.id,
                 ownerId: user.uid
               }, { merge: true })
-            })
+            }
+
+            // Seed Purchases (using seeded products for references)
+            const purchases = getDummyPurchases(user.uid, seededProducts)
+            for (const purchase of purchases) {
+              const purchaseRef = doc(collection(firestore, "purchases"))
+              setDocumentNonBlocking(purchaseRef, {
+                ...purchase,
+                id: purchaseRef.id,
+                ownerId: user.uid
+              }, { merge: true })
+            }
+
+            // Seed Sales
+            const sales = getDummySales(user.uid, seededProducts)
+            for (const sale of sales) {
+              const saleRef = doc(collection(firestore, "sales"))
+              setDocumentNonBlocking(saleRef, {
+                ...sale,
+                id: saleRef.id,
+                ownerId: user.uid
+              }, { merge: true })
+            }
           }
         }
 
@@ -67,12 +101,13 @@ export default function LoginPage() {
 
   const handleAuthError = (error: any) => {
     setIsSubmitting(false)
-    // If user doesn't exist for test credentials, attempt sign up
-    if (email === "test@test.com" && error.code === "auth/user-not-found") {
+    if (email === "test@test.com" && (error.code === "auth/user-not-found" || error.code === "auth/invalid-credential")) {
        const { initiateEmailSignUp } = require("@/firebase")
-       initiateEmailSignUp(auth!, email, password, (err: any) => {
+       initiateEmailSignUp(auth!, email, "123456", (err: any) => {
          setIsSubmitting(false)
-         toast({ variant: "destructive", title: "Auth Error", description: err.message })
+         if (err.code !== "auth/email-already-in-use") {
+          toast({ variant: "destructive", title: "Auth Error", description: err.message })
+         }
        })
        return
     }
@@ -105,16 +140,12 @@ export default function LoginPage() {
     if (!auth) return
     setIsSubmitting(true)
     initiateEmailSignIn(auth, testEmail, testPass, (err) => {
-      // If user not found, try to sign up immediately for the test account
       if (err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") {
         const { initiateEmailSignUp } = require("@/firebase")
         initiateEmailSignUp(auth, testEmail, testPass, (signupErr: any) => {
           setIsSubmitting(false)
           if (signupErr.code !== "auth/email-already-in-use") {
              toast({ variant: "destructive", title: "Test Login Failed", description: signupErr.message })
-          } else {
-             // If already exists but pass failed, it's a real auth error
-             handleAuthError(signupErr)
           }
         })
       } else {
