@@ -1,0 +1,240 @@
+{
+  "entities": {
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a product in the inventory.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Product entity."
+        },
+        "productName": {
+          "type": "string",
+          "description": "Name of the product."
+        },
+        "sku": {
+          "type": "string",
+          "description": "Stock Keeping Unit, a unique identifier for the product."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the product (e.g., electronics, clothing)."
+        },
+        "purchasePrice": {
+          "type": "number",
+          "description": "Price at which the product was purchased."
+        },
+        "sellingPrice": {
+          "type": "number",
+          "description": "Price at which the product is sold."
+        },
+        "currentQuantity": {
+          "type": "number",
+          "description": "Current quantity of the product in stock."
+        }
+      },
+      "required": [
+        "id",
+        "productName",
+        "sku",
+        "category",
+        "purchasePrice",
+        "sellingPrice",
+        "currentQuantity"
+      ]
+    },
+    "Sale": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Sale",
+      "type": "object",
+      "description": "Represents a sale transaction.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Sale entity."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the sale.",
+          "format": "date-time"
+        },
+        "invoiceNumber": {
+          "type": "string",
+          "description": "Invoice number for the sale."
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total amount of the sale."
+        },
+        "productIds": {
+          "type": "array",
+          "description": "References to Products. (Relationship: Sale 1:N Product)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "date",
+        "invoiceNumber",
+        "totalAmount",
+        "productIds"
+      ]
+    },
+    "Purchase": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Purchase",
+      "type": "object",
+      "description": "Represents a purchase transaction from a supplier.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Purchase entity."
+        },
+        "supplierName": {
+          "type": "string",
+          "description": "Name of the supplier."
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Purchase 1:N Product)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the product purchased."
+        },
+        "purchasePrice": {
+          "type": "number",
+          "description": "Price at which the product was purchased."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the purchase.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "supplierName",
+        "productId",
+        "quantity",
+        "purchasePrice",
+        "date"
+      ]
+    },
+    "Expense": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Expense",
+      "type": "object",
+      "description": "Represents an expense.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Expense entity."
+        },
+        "expenseName": {
+          "type": "string",
+          "description": "Name of the expense."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the expense (e.g., rent, electricity)."
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount of the expense."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the expense.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "expenseName",
+        "category",
+        "amount",
+        "date"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Stores product information. Each product document contains all product details.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "Unique identifier for the product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "sales/{saleId}",
+        "definition": {
+          "entityName": "Sale",
+          "schema": {
+            "$ref": "#/backend/entities/Sale"
+          },
+          "description": "Stores sales transaction data. Each sale document includes details such as date, invoice number, total amount, and references to products sold.",
+          "params": [
+            {
+              "name": "saleId",
+              "description": "Unique identifier for the sale."
+            }
+          ]
+        }
+      },
+      {
+        "path": "purchases/{purchaseId}",
+        "definition": {
+          "entityName": "Purchase",
+          "schema": {
+            "$ref": "#/backend/entities/Purchase"
+          },
+          "description": "Stores purchase transaction data. Includes supplier name, product, quantity, purchase price, and date.",
+          "params": [
+            {
+              "name": "purchaseId",
+              "description": "Unique identifier for the purchase."
+            }
+          ]
+        }
+      },
+      {
+        "path": "expenses/{expenseId}",
+        "definition": {
+          "entityName": "Expense",
+          "schema": {
+            "$ref": "#/backend/entities/Expense"
+          },
+          "description": "Stores expense data. Contains fields for expense name, category, amount, and date.",
+          "params": [
+            {
+              "name": "expenseId",
+              "description": "Unique identifier for the expense."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support the BizManager application's requirements for managing inventory, sales, purchases, and expenses for a small business. A top-level collection `products` stores the inventory. The `sales`, `purchases`, and `expenses` collections are stored at the top level for easy querying and reporting. Each document in the collection is owned by the user and thus uses path-based ownership, enabling secure list operations and simplified security rules. This design promotes Authorization Independence by avoiding hierarchical authorization dependencies, making the application easier to debug and scale."
+  }
+}

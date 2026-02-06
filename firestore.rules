@@ -1,0 +1,156 @@
+/**
+ * BizManager Firestore Security Rules
+ *
+ * Core Philosophy: 
+ * This ruleset implements a strict User-Ownership model. Although the data is structured 
+ * in top-level collections for simplified querying and reporting, access is restricted 
+ * to the authenticated user who created the record.
+ *
+ * Data Structure:
+ * - /products/{productId}: Inventory items.
+ * - /sales/{saleId}: Transaction records for outgoing goods.
+ * - /purchases/{purchaseId}: Records of goods acquired from suppliers.
+ * - /expenses/{expenseId}: Business operational costs.
+ *
+ * Key Security Decisions:
+ * - Strict Ownership: All documents are assumed to contain an `ownerId` field that 
+ *   links the record to a specific user UID.
+ * - Path Consistency: Rules enforce that the internal `id` field of a document matches 
+ *    its Firestore Document ID during creation.
+ * - Immutability: Ownership fields (`ownerId`) are immutable once a document is created 
+ *   to prevent data hijacking.
+ * - Prototyping Flexibility: Data schemas (types and optional fields) are not 
+ *   validated to allow for rapid UI/UX iteration.
+ *
+ * Denormalization for Authorization:
+ * The security model relies on an `ownerId` being present on every document. 
+ * This avoids the need for cross-collection lookups (get() calls) which are 
+ * computationally expensive and would slow down list operations.
+ */
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+
+    /**
+     * @description Basic check to see if a request is from an authenticated user.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the user's UID matches the provided ownerId.
+     */
+    function isOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    /**
+     * @description Checks ownership and ensures the document exists for destructive operations.
+     */
+    function isExistingOwner(ownerId) {
+      return resource != null && isOwner(ownerId);
+    }
+
+    /**
+     * @description Checks if a field is being modified during an update.
+     */
+    function isUnchanged(fieldName) {
+      return request.resource.data[fieldName] == resource.data[fieldName];
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for the Product inventory.
+     * @path /products/{productId}
+     * @allow Authenticated users to create products with their UID as ownerId.
+     * @deny Access if the ownerId does not match the authenticated user or is missing.
+     * @principle Ownership-based access control.
+     */
+    match /products/{productId} {
+      // CRITICAL: The 'Product' entity in the provided schema is missing an 'ownerId' field.
+      // This is required to implement the "owned by the user" reasoning safely at the top level.
+      // TODO: Add 'ownerId' to the Product schema and ensure the client sends it.
+      
+      allow get, list: if isOwner(resource.data.ownerId);
+      
+      allow create: if isOwner(request.resource.data.ownerId) 
+                    && request.resource.data.id == productId;
+      
+      allow update: if isExistingOwner(resource.data.ownerId) 
+                    && isUnchanged('ownerId');
+      
+      allow delete: if isExistingOwner(resource.data.ownerId);
+    }
+
+    /**
+     * @description Rules for Sale transaction records.
+     * @path /sales/{saleId}
+     * @allow Owners to view and manage their own sales transactions.
+     * @deny One user viewing another user's sales data.
+     * @principle Ownership-based access control with relational integrity.
+     */
+    match /sales/{saleId} {
+      // CRITICAL: The 'Sale' entity is missing an 'ownerId' field.
+      // TODO: Add 'ownerId' to the Sale schema.
+      
+      allow get, list: if isOwner(resource.data.ownerId);
+      
+      allow create: if isOwner(request.resource.data.ownerId) 
+                    && request.resource.data.id == saleId;
+      
+      allow update: if isExistingOwner(resource.data.ownerId) 
+                    && isUnchanged('ownerId');
+      
+      allow delete: if isExistingOwner(resource.data.ownerId);
+    }
+
+    /**
+     * @description Rules for Purchase records from suppliers.
+     * @path /purchases/{purchaseId}
+     * @allow Owners to log and view their own purchase history.
+     * @deny Unauthenticated access or cross-user access.
+     * @principle Ownership-based access control.
+     */
+    match /purchases/{purchaseId} {
+      // CRITICAL: The 'Purchase' entity is missing an 'ownerId' field.
+      // TODO: Add 'ownerId' to the Purchase schema.
+      
+      allow get, list: if isOwner(resource.data.ownerId);
+      
+      allow create: if isOwner(request.resource.data.ownerId) 
+                    && request.resource.data.id == purchaseId;
+      
+      allow update: if isExistingOwner(resource.data.ownerId) 
+                    && isUnchanged('ownerId');
+      
+      allow delete: if isExistingOwner(resource.data.ownerId);
+    }
+
+    /**
+     * @description Rules for Expense records.
+     * @path /expenses/{expenseId}
+     * @allow Owners to record and monitor their business expenses.
+     * @deny Modifying an expense that belongs to a different user.
+     * @principle Ownership-based access control with ID consistency.
+     */
+    match /expenses/{expenseId} {
+      // CRITICAL: The 'Expense' entity is missing an 'ownerId' field.
+      // TODO: Add 'ownerId' to the Expense schema.
+      
+      allow get, list: if isOwner(resource.data.ownerId);
+      
+      allow create: if isOwner(request.resource.data.ownerId) 
+                    && request.resource.data.id == expenseId;
+      
+      allow update: if isExistingOwner(resource.data.ownerId) 
+                    && isUnchanged('ownerId');
+      
+      allow delete: if isExistingOwner(resource.data.ownerId);
+    }
+  }
+}
