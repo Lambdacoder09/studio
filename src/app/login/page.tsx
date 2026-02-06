@@ -98,17 +98,24 @@ export default function LoginPage() {
   }
 
   const handleQuickTestLogin = () => {
-    setEmail("test@test.com")
-    setPassword("test")
+    const testEmail = "test@test.com"
+    const testPass = "123456"
+    setEmail(testEmail)
+    setPassword(testPass)
     if (!auth) return
     setIsSubmitting(true)
-    initiateEmailSignIn(auth, "test@test.com", "test", (err) => {
+    initiateEmailSignIn(auth, testEmail, testPass, (err) => {
       // If user not found, try to sign up immediately for the test account
       if (err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") {
         const { initiateEmailSignUp } = require("@/firebase")
-        initiateEmailSignUp(auth, "test@test.com", "test", (signupErr: any) => {
+        initiateEmailSignUp(auth, testEmail, testPass, (signupErr: any) => {
           setIsSubmitting(false)
-          toast({ variant: "destructive", title: "Test Login Failed", description: signupErr.message })
+          if (signupErr.code !== "auth/email-already-in-use") {
+             toast({ variant: "destructive", title: "Test Login Failed", description: signupErr.message })
+          } else {
+             // If already exists but pass failed, it's a real auth error
+             handleAuthError(signupErr)
+          }
         })
       } else {
         handleAuthError(err)
@@ -173,7 +180,7 @@ export default function LoginPage() {
               onClick={handleQuickTestLogin}
               disabled={isSubmitting}
             >
-              <TestTubeDiagonal className="h-4 w-4" /> Quick Login (test/test)
+              <TestTubeDiagonal className="h-4 w-4" /> Quick Login (test/123456)
             </Button>
 
             <Button 
