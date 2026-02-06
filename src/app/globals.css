@@ -69,34 +69,44 @@
     size: auto;
   }
 
-  body {
-    visibility: hidden;
+  /* Reset document flow entirely for print to prevent extra blank pages */
+  html, body {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    visibility: hidden; /* Hide all by default */
   }
-  
+
+  /* Only show the receipt */
   #printable-receipt, 
   #printable-receipt * {
     visibility: visible;
   }
   
   #printable-receipt {
+    display: block !important;
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
     margin: 0 !important;
-    padding: 40px !important;
+    padding: 1.5cm !important; /* Standard print margins */
     background: white !important;
     box-shadow: none !important;
+    border: none !important;
+    /* Prevent page breaks inside the receipt content if possible */
+    page-break-after: avoid;
   }
 
-  /* Aggressively reset Radix/Dialog containers during print to prevent shifts and blank pages */
+  /* Kill all fixed position elements and overlays that cause blank space/extra pages */
   [data-radix-portal],
   [role="dialog"],
+  [role="presentation"],
   div[data-state] {
     position: static !important;
     transform: none !important;
@@ -110,24 +120,23 @@
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
+    overflow: visible !important;
   }
 
-  /* Hide the modal overlay and close button completely */
+  /* Explicitly hide standard UI fluff */
   [data-radix-overlay],
-  .fixed.inset-0.bg-black\/80,
-  button.absolute.right-4.top-4 {
+  .fixed.inset-0,
+  button,
+  nav,
+  header {
     display: none !important;
   }
 
-  /* Ensure no elements have scrollbars or limited height */
-  .overflow-y-auto,
+  /* Remove any scroll limitations on print content */
   [class*="overflow-"],
   [class*="max-h-"] {
     overflow: visible !important;
     max-height: none !important;
     height: auto !important;
   }
-
-  /* Optional: Force the footer to the bottom of the content if needed, 
-     but standard flow is safer for single-page receipts. */
 }
