@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ShoppingCart, Plus, Receipt, Search, Trash2, Printer, Loader2, Package, CheckCircle2 } from "lucide-react"
+import { ShoppingCart, Plus, Receipt, Search, Trash2, Printer, Loader2, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -340,7 +340,7 @@ export default function SalesPage() {
 
       {/* Receipt Dialog */}
       <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white print:p-0 print:border-none print:shadow-none">
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-visible bg-white print:p-0 print:border-none print:shadow-none">
           <DialogHeader className="p-6 pb-0 print:hidden">
             <DialogTitle>Sales Receipt Generated</DialogTitle>
             <DialogDescription>
@@ -369,7 +369,7 @@ export default function SalesPage() {
             {/* Info */}
             <div className="grid grid-cols-2 gap-8 border-y border-border py-4 text-[11px]">
               <div className="space-y-1">
-                <p className="font-bold text-muted-foreground uppercase">Transaction Info</p>
+                <p className="font-bold text-muted-foreground uppercase text-xs">Transaction Info</p>
                 <p className="font-mono">INV: #{currentSale?.invoiceNumber}</p>
                 <p className="font-mono">DATE: {currentSale?.date && new Date(currentSale.date).toLocaleDateString()}</p>
               </div>
@@ -404,7 +404,7 @@ export default function SalesPage() {
 
             {/* Total */}
             <div className="pt-6 border-t border-border flex justify-between items-center">
-              <p className="text-xs font-bold uppercase">Amount Due</p>
+              <p className="text-xs font-bold uppercase tracking-widest">Amount Due</p>
               <p className="text-3xl font-bold tracking-tighter text-primary font-mono">
                 ${Number(currentSale?.totalAmount).toFixed(2)}
               </p>

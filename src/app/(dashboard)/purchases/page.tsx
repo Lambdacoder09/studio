@@ -1,10 +1,9 @@
-
 "use client"
 
 import { useState } from "react"
-import { Plus, Truck, Calendar, User, Loader2, Printer, FileText, CheckCircle2 } from "lucide-react"
+import { Plus, Truck, Loader2, Printer, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase"
@@ -257,9 +256,9 @@ export default function PurchasesPage() {
         </CardContent>
       </Card>
 
-      {/* Purchase Summary Dialog (The "Receipt" for Purchases) */}
+      {/* Purchase Summary Dialog */}
       <Dialog open={isSummaryOpen} onOpenChange={setIsSummaryOpen}>
-        <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-white print:p-0 print:border-none print:shadow-none">
+        <DialogContent className="sm:max-w-[600px] p-0 overflow-visible bg-white print:p-0 print:border-none print:shadow-none">
           <DialogHeader className="p-6 pb-0 print:hidden">
             <DialogTitle>Purchase Document Generated</DialogTitle>
             <DialogDescription>Record of inventory procurement for Voucher #{currentPurchase?.voucherNumber}</DialogDescription>
@@ -294,14 +293,14 @@ export default function PurchasesPage() {
             {/* Entity Info */}
             <div className="grid grid-cols-2 gap-8 border-y border-border py-6 text-[11px]">
               <div className="space-y-2">
-                <p className="font-bold text-muted-foreground uppercase tracking-wider">Vendor / Supplier</p>
+                <p className="font-bold text-muted-foreground uppercase tracking-wider text-xs">Vendor / Supplier</p>
                 <div className="space-y-1">
                   <p className="text-lg font-bold uppercase">{currentPurchase?.supplierName}</p>
                   <p className="text-muted-foreground">Account: Regular Supplier</p>
                 </div>
               </div>
               <div className="space-y-2 text-right">
-                <p className="font-bold text-muted-foreground uppercase tracking-wider">Bill To</p>
+                <p className="font-bold text-muted-foreground uppercase tracking-wider text-xs">Bill To</p>
                 <div className="space-y-1">
                   <p className="text-lg font-bold uppercase">BizManager Store</p>
                   <p className="text-muted-foreground">Admin: {user?.email?.split('@')[0].toUpperCase()}</p>
@@ -319,7 +318,7 @@ export default function PurchasesPage() {
               </div>
               <div className="grid grid-cols-12 text-[12px] items-center border-b border-dashed pb-4">
                 <div className="col-span-6">
-                  <p className="font-bold uppercase">{currentPurchase?.productName}</p>
+                  <p className="font-bold uppercase leading-tight">{currentPurchase?.productName}</p>
                   <p className="text-[10px] text-muted-foreground font-mono">SKU: {currentPurchase?.sku || 'N/A'}</p>
                 </div>
                 <div className="col-span-2 text-center font-mono">+{currentPurchase?.quantity}</div>
