@@ -1,20 +1,53 @@
-
 "use client"
 
 import { useState } from "react"
-import { Calendar, Download, TrendingUp, TrendingDown, DollarSign, Package, PieChart } from "lucide-react"
+import { Calendar, Download, TrendingUp, TrendingDown, DollarSign, Package, PieChart, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { MOCK_SALES, MOCK_EXPENSES, MOCK_PRODUCTS } from "@/lib/mock-data"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { collection, query, where } from "firebase/firestore"
 
 export default function ReportsPage() {
+  const { user } = useUser()
+  const firestore = useFirestore()
   const [dateRange, setDateRange] = useState("This Month")
   
-  const totalSales = MOCK_SALES.reduce((sum, s) => sum + s.totalAmount, 0)
-  const totalExpenses = MOCK_EXPENSES.reduce((sum, e) => sum + e.amount, 0)
+  // Real-time Sales Data
+  const salesQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null
+    return query(collection(firestore, "sales"), where("ownerId", "==", user.uid))
+  }, [firestore, user])
+  const { data: sales, isLoading: isSalesLoading } = useCollection(salesQuery)
+
+  // Real-time Expenses Data
+  const expensesQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null
+    return query(collection(firestore, "expenses"), where("ownerId", "==", user.uid))
+  }, [firestore, user])
+  const { data: expenses, isLoading: isExpensesLoading } = useCollection(expensesQuery)
+
+  // Real-time Products Data (for stock valuation)
+  const productsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null
+    return query(collection(firestore, "products"), where("ownerId", "==", user.uid))
+  }, [firestore, user])
+  const { data: products, isLoading: isProductsLoading } = useCollection(productsQuery)
+
+  if (isSalesLoading || isExpensesLoading || isProductsLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  const totalSales = sales?.reduce((sum, s) => sum + (s.totalAmount || 0), 0) || 0
+  const totalExpenses = expenses?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0
   const grossProfit = totalSales - totalExpenses
-  const stockValue = MOCK_PRODUCTS.reduce((sum, p) => sum + (p.quantity * p.purchasePrice), 0)
+  const stockValue = products?.reduce((sum, p) => sum + (p.currentQuantity * p.purchasePrice), 0) || 0
+  const totalStockUnits = products?.reduce((sum, p) => sum + p.currentQuantity, 0) || 0
+  const profitMargin = totalSales > 0 ? (grossProfit / totalSales) * 100 : 0
 
   return (
     <div className="space-y-6">
@@ -27,8 +60,8 @@ export default function ReportsPage() {
           <Button variant="outline" className="gap-2">
             <Calendar className="h-4 w-4" /> {dateRange}
           </Button>
-          <Button className="bg-primary text-white gap-2">
-            <Download className="h-4 w-4" /> Export PDF
+          <Button className="bg-primary text-white gap-2" onClick={() => window.print()}>
+            <Download className="h-4 w-4" /> Export PDF / Print
           </Button>
         </div>
       </div>
@@ -37,7 +70,6 @@ export default function ReportsPage() {
         <TabsList className="bg-white border shadow-sm h-12 p-1">
           <TabsTrigger value="pl" className="px-6 data-[state=active]:bg-primary data-[state=active]:text-white">Profit & Loss</TabsTrigger>
           <TabsTrigger value="stock" className="px-6 data-[state=active]:bg-primary data-[state=active]:text-white">Stock Valuation</TabsTrigger>
-          <TabsTrigger value="tax" className="px-6 data-[state=active]:bg-primary data-[state=active]:text-white">Tax Summary</TabsTrigger>
         </TabsList>
         
         <TabsContent value="pl" className="mt-6 space-y-6">
@@ -67,7 +99,8 @@ export default function ReportsPage() {
               <CardContent>
                 <div className="text-3xl font-bold text-primary">${grossProfit.toFixed(2)}</div>
                 <p className="text-xs text-muted-foreground mt-1 flex items-center">
-                  <TrendingUp className="h-3 w-3 text-emerald-500 mr-1" /> Healthy margin (62%)
+                  <TrendingUp className={`h-3 w-3 mr-1 ${profitMargin >= 0 ? 'text-emerald-500' : 'text-rose-500'}`} /> 
+                  Margin ({profitMargin.toFixed(1)}%)
                 </p>
               </CardContent>
             </Card>
@@ -98,14 +131,16 @@ export default function ReportsPage() {
                   <h3 className="font-semibold text-rose-600 border-b pb-2 flex items-center gap-2">
                     <TrendingDown className="h-4 w-4" /> Expenses
                   </h3>
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-sm">Rent & Utilities</span>
-                    <span className="font-medium font-mono">$1,410.00</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-sm">Supplies & Other</span>
-                    <span className="font-medium font-mono">$45.00</span>
-                  </div>
+                  {expenses?.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No expenses recorded for this period.</p>
+                  ) : (
+                    expenses?.map((e, idx) => (
+                      <div key={idx} className="flex justify-between items-center py-1">
+                        <span className="text-sm">{e.expenseName}</span>
+                        <span className="font-medium font-mono">${Number(e.amount).toFixed(2)}</span>
+                      </div>
+                    ))
+                  )}
                   <div className="flex justify-between items-center py-1 font-bold border-t border-rose-100 pt-2">
                     <span>Total Expenses</span>
                     <span className="font-mono text-rose-600">${totalExpenses.toFixed(2)}</span>
@@ -138,11 +173,11 @@ export default function ReportsPage() {
                 <div className="mt-4 md:mt-0 flex gap-4">
                   <div className="p-4 bg-white rounded-lg shadow-sm border text-center">
                     <p className="text-xs text-muted-foreground font-medium uppercase">Units</p>
-                    <p className="text-xl font-bold">{MOCK_PRODUCTS.reduce((s,p) => s + p.quantity, 0)}</p>
+                    <p className="text-xl font-bold">{totalStockUnits}</p>
                   </div>
                   <div className="p-4 bg-white rounded-lg shadow-sm border text-center">
                     <p className="text-xs text-muted-foreground font-medium uppercase">SKUs</p>
-                    <p className="text-xl font-bold">{MOCK_PRODUCTS.length}</p>
+                    <p className="text-xl font-bold">{products?.length || 0}</p>
                   </div>
                 </div>
               </div>
@@ -150,11 +185,11 @@ export default function ReportsPage() {
               <div className="space-y-4">
                 <h3 className="font-semibold text-primary border-b pb-2">Category Wise Distribution</h3>
                 <div className="space-y-3">
-                  {['Beverages', 'Kitchenware'].map((cat, idx) => {
-                    const catValue = MOCK_PRODUCTS
-                      .filter(p => p.category === cat)
-                      .reduce((sum, p) => sum + (p.quantity * p.purchasePrice), 0)
-                    const percent = (catValue / stockValue) * 100
+                  {Array.from(new Set(products?.map(p => p.category) || [])).map((cat, idx) => {
+                    const catValue = products
+                      ?.filter(p => p.category === cat)
+                      .reduce((sum, p) => sum + (p.currentQuantity * p.purchasePrice), 0) || 0
+                    const percent = stockValue > 0 ? (catValue / stockValue) * 100 : 0
                     return (
                       <div key={idx} className="space-y-1.5">
                         <div className="flex justify-between text-sm">
@@ -163,7 +198,7 @@ export default function ReportsPage() {
                         </div>
                         <div className="h-2.5 w-full bg-muted rounded-full overflow-hidden">
                           <div 
-                            className={`h-full ${idx === 0 ? 'bg-primary' : 'bg-secondary'}`} 
+                            className={`h-full ${idx % 2 === 0 ? 'bg-primary' : 'bg-secondary'}`} 
                             style={{ width: `${percent}%` }}
                           ></div>
                         </div>

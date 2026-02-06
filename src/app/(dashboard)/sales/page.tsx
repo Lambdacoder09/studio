@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -114,7 +113,7 @@ export default function SalesPage() {
       if (product) {
         const productRef = doc(firestore, "products", item.productId)
         updateDocumentNonBlocking(productRef, {
-          currentQuantity: product.currentQuantity - item.quantity
+          currentQuantity: Number(product.currentQuantity) - Number(item.quantity)
         })
       }
     })
@@ -127,6 +126,10 @@ export default function SalesPage() {
       title: "Sale Completed",
       description: `Invoice ${invoiceNumber} has been generated.`,
     })
+  }
+
+  const handlePrint = () => {
+    window.print()
   }
 
   return (
@@ -348,7 +351,7 @@ export default function SalesPage() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="border rounded-lg p-6 space-y-4 bg-muted/5 font-mono text-sm" id="receipt-content">
+          <div className="border rounded-lg p-6 space-y-4 bg-muted/5 font-mono text-sm" id="printable-receipt">
             <div className="text-center border-b pb-4">
               <p className="font-bold text-lg">BIZMANAGER STORE</p>
               <p className="text-xs text-muted-foreground">Digital Business Management</p>
@@ -383,30 +386,12 @@ export default function SalesPage() {
 
           <DialogFooter className="sm:justify-center gap-2">
             <Button variant="outline" onClick={() => setIsReceiptOpen(false)}>Close</Button>
-            <Button className="bg-primary text-white gap-2" onClick={() => window.print()}>
+            <Button className="bg-primary text-white gap-2" onClick={handlePrint}>
               <Printer className="h-4 w-4" /> Print Receipt
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          #receipt-content, #receipt-content * {
-            visibility: visible;
-          }
-          #receipt-content {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            border: none;
-          }
-        }
-      `}</style>
     </div>
   )
 }

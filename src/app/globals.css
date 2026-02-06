@@ -62,3 +62,31 @@
     @apply bg-background text-foreground font-body;
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #printable-receipt, #printable-receipt * {
+    visibility: visible !important;
+  }
+  #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    border: none !important;
+    background: white !important;
+    color: black !important;
+  }
+  /* Hide the modal overlay/buttons during print */
+  [data-radix-portal] {
+    position: static !important;
+  }
+  .dialog-content {
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
