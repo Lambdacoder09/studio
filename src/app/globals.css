@@ -64,63 +64,57 @@
 }
 
 @media print {
-  /* Hide absolutely everything by default */
+  /* Hide standard app UI */
+  .print-hidden,
+  aside,
+  nav,
+  button:not(.print-show),
+  [data-sidebar-wrapper],
+  [data-sidebar] {
+    display: none !important;
+  }
+
+  /* Reset layout for single page printing */
   html, body {
-    visibility: hidden;
     height: auto !important;
+    overflow: visible !important;
     margin: 0 !important;
     padding: 0 !important;
-    background: white !important;
-  }
-
-  /* Target the receipt and its necessary ancestors for display */
-  #printable-receipt,
-  #printable-receipt * {
-    visibility: visible;
-  }
-
-  /* Reset the Radix Dialog and Portal for printing */
-  [role="dialog"],
-  [data-radix-portal],
-  div[data-state="open"] {
+    background-color: white !important;
     visibility: visible !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
+  }
+
+  /* Force the portal/dialog to be a standard block at the top of the page */
+  [data-radix-portal],
+  [role="dialog"] {
+    position: static !important;
+    transform: none !important;
+    display: block !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
     box-shadow: none !important;
-    background: transparent !important;
-    transform: none !important; /* Remove centering transforms */
-    display: block !important;
-  }
-
-  /* Position the receipt at the very top of the page */
-  #printable-receipt {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    max-width: 800px; /* Prevent it from being "too big" */
-    margin: 0 auto !important;
-    padding: 2rem !important;
     background: white !important;
-    color: black !important;
   }
 
-  /* Remove all browser-injected print elements and scrollbars */
+  /* Target the receipt specifically to ensure it fills the page */
+  #printable-receipt {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 1.5rem !important;
+    visibility: visible !important;
+  }
+
+  /* Ensure all parent containers allow visibility */
+  div {
+    overflow: visible !important;
+  }
+
   @page {
-    margin: 0;
+    margin: 0.5cm;
     size: auto;
-  }
-
-  /* Hide specific UI elements within the visible tree */
-  .print-hidden,
-  button,
-  [data-radix-collection],
-  svg:not(.receipt-icon) {
-    display: none !important;
   }
 }

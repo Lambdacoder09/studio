@@ -134,12 +134,12 @@ export default function SalesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-primary">Sales Management</h1>
           <p className="text-muted-foreground">Process new sales and manage transaction history.</p>
         </div>
-        <div className="flex gap-2 print-hidden">
+        <div className="flex gap-2">
           <Button 
             variant={view === "history" ? "default" : "outline"} 
             onClick={() => setView("history")}
@@ -158,7 +158,7 @@ export default function SalesPage() {
       </div>
 
       {view === "history" ? (
-        <Card className="border-none shadow-sm bg-white print-hidden">
+        <Card className="border-none shadow-sm bg-white print:hidden">
           <CardHeader>
             <CardTitle>Transaction Records</CardTitle>
             <CardDescription>A list of all sales processed through BizManager.</CardDescription>
@@ -228,7 +228,7 @@ export default function SalesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:hidden">
           <Card className="lg:col-span-2 border-none shadow-sm bg-white">
             <CardHeader>
               <CardTitle>Catalog</CardTitle>
@@ -340,16 +340,16 @@ export default function SalesPage() {
 
       {/* Receipt Dialog */}
       <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white">
-          <DialogHeader className="p-6 pb-0 print-hidden">
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white print:p-0 print:border-none print:shadow-none">
+          <DialogHeader className="p-6 pb-0 print:hidden">
             <DialogTitle>Sales Receipt Generated</DialogTitle>
             <DialogDescription>
               Transaction record for invoice #{currentSale?.invoiceNumber}
             </DialogDescription>
           </DialogHeader>
 
-          <div id="printable-receipt" className="p-8 space-y-8 bg-white text-slate-900 font-sans">
-            {/* Professional Header */}
+          <div id="printable-receipt" className="p-8 space-y-8 bg-white text-foreground font-sans print:p-4">
+            {/* Header */}
             <div className="text-center space-y-4">
               <div className="relative w-16 h-16 mx-auto">
                 <Image 
@@ -361,28 +361,27 @@ export default function SalesPage() {
                 />
               </div>
               <div className="space-y-1">
-                <h2 className="text-2xl font-black uppercase tracking-tighter">BizManager Store</h2>
-                <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">Premium Inventory & Supply Solutions</p>
-                <p className="text-[10px] text-slate-400 font-mono">123 Innovation Way, Silicon Valley, CA 94025</p>
+                <h2 className="text-2xl font-bold uppercase tracking-tighter">BizManager Store</h2>
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">Premium Inventory Solutions</p>
               </div>
             </div>
 
-            {/* Transaction Data Block */}
-            <div className="grid grid-cols-2 gap-8 border-y-2 border-slate-100 py-4 text-[11px]">
-              <div className="space-y-1.5">
-                <p className="font-bold text-slate-400 uppercase tracking-wider">Transaction Info</p>
-                <p className="font-mono"><span className="text-slate-400">INV:</span> #{currentSale?.invoiceNumber}</p>
-                <p className="font-mono"><span className="text-slate-400">DATE:</span> {currentSale?.date && new Date(currentSale.date).toLocaleDateString()}</p>
+            {/* Info */}
+            <div className="grid grid-cols-2 gap-8 border-y border-border py-4 text-[11px]">
+              <div className="space-y-1">
+                <p className="font-bold text-muted-foreground uppercase">Transaction Info</p>
+                <p className="font-mono">INV: #{currentSale?.invoiceNumber}</p>
+                <p className="font-mono">DATE: {currentSale?.date && new Date(currentSale.date).toLocaleDateString()}</p>
               </div>
-              <div className="text-right space-y-1.5">
-                <p className="font-mono pt-4"><span className="text-slate-400">TIME:</span> {currentSale?.date && new Date(currentSale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                <p className="font-mono"><span className="text-slate-400">STAFF:</span> {user?.email?.split('@')[0].toUpperCase()}</p>
+              <div className="text-right space-y-1">
+                <p className="font-mono pt-5">TIME: {currentSale?.date && new Date(currentSale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                <p className="font-mono">STAFF: {user?.email?.split('@')[0].toUpperCase()}</p>
               </div>
             </div>
 
-            {/* Itemized Billing Table */}
-            <div className="space-y-4 min-h-[150px]">
-              <div className="grid grid-cols-12 text-[10px] font-black uppercase text-slate-400 border-b pb-2">
+            {/* Items */}
+            <div className="space-y-4 min-h-[100px]">
+              <div className="grid grid-cols-12 text-[10px] font-bold uppercase text-muted-foreground border-b pb-2">
                 <div className="col-span-6">Description</div>
                 <div className="col-span-2 text-center">Qty</div>
                 <div className="col-span-2 text-right">Price</div>
@@ -391,47 +390,41 @@ export default function SalesPage() {
               <div className="space-y-3">
                 {currentSale?.items?.map((item: any, idx: number) => (
                   <div key={idx} className="grid grid-cols-12 text-[11px] items-center">
-                    <div className="col-span-6 space-y-0.5">
+                    <div className="col-span-6">
                       <p className="font-bold uppercase leading-none">{item.name}</p>
-                      <p className="text-[9px] text-slate-400 font-mono">SKU: {item.sku || 'N/A'}</p>
+                      <p className="text-[9px] text-muted-foreground font-mono">SKU: {item.sku || 'N/A'}</p>
                     </div>
-                    <div className="col-span-2 text-center font-mono text-slate-600">{item.quantity}</div>
-                    <div className="col-span-2 text-right font-mono text-slate-600">${item.price.toFixed(2)}</div>
-                    <div className="col-span-2 text-right font-black font-mono">${(item.quantity * item.price).toFixed(2)}</div>
+                    <div className="col-span-2 text-center font-mono">{item.quantity}</div>
+                    <div className="col-span-2 text-right font-mono">${item.price.toFixed(2)}</div>
+                    <div className="col-span-2 text-right font-bold font-mono">${(item.quantity * item.price).toFixed(2)}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Total Calculation */}
-            <div className="pt-6 border-t-4 border-double border-slate-100 flex justify-between items-center">
-              <p className="text-xs font-black uppercase tracking-[0.2em]">Amount Due</p>
-              <p className="text-3xl font-black tracking-tighter text-primary font-mono">
+            {/* Total */}
+            <div className="pt-6 border-t border-border flex justify-between items-center">
+              <p className="text-xs font-bold uppercase">Amount Due</p>
+              <p className="text-3xl font-bold tracking-tighter text-primary font-mono">
                 ${Number(currentSale?.totalAmount).toFixed(2)}
               </p>
             </div>
 
-            {/* Footer & Signature */}
-            <div className="pt-8 text-center space-y-8">
+            {/* Footer */}
+            <div className="pt-8 text-center space-y-6">
               <div className="flex flex-col items-center gap-2">
-                <div className="w-48 h-[1px] bg-slate-200"></div>
-                <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Official Authorization</span>
+                <div className="w-32 h-px bg-border"></div>
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Authorized Signature</span>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-[0.3em]">Thank you for your business</p>
-                <div className="flex items-center justify-center gap-1 text-slate-300">
-                  <CheckCircle2 className="h-3 w-3 receipt-icon" />
-                  <span className="text-[8px] font-mono italic">Verified Transaction</span>
-                </div>
-              </div>
+              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Thank you for your business</p>
             </div>
           </div>
 
-          <DialogFooter className="p-4 border-t bg-slate-50 gap-2 print-hidden sm:justify-center">
+          <DialogFooter className="p-4 border-t bg-muted/50 gap-2 print:hidden sm:justify-center">
             <Button variant="outline" className="flex-1" onClick={() => setIsReceiptOpen(false)}>
               Dismiss
             </Button>
-            <Button className="flex-1 bg-primary text-white gap-2" onClick={handlePrint}>
+            <Button className="flex-1 bg-primary text-white gap-2 print-show" onClick={handlePrint}>
               <Printer className="h-4 w-4" /> Print Document
             </Button>
           </DialogFooter>
