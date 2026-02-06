@@ -348,14 +348,14 @@ export default function SalesPage() {
       {/* Receipt Dialog */}
       <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
         <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white">
-          <DialogHeader className="p-6 pb-0 sr-only">
+          <DialogHeader className="p-6 pb-0">
             <DialogTitle>Sales Receipt</DialogTitle>
             <DialogDescription>
               Transaction record for invoice #{currentSale?.invoiceNumber}
             </DialogDescription>
           </DialogHeader>
-          <div className="p-0 overflow-y-auto max-h-[85vh] print:overflow-visible print:max-h-none">
-            <div id="printable-receipt" className="space-y-6 text-slate-900 bg-white">
+          <div className="p-0 overflow-y-auto max-h-[70vh]">
+            <div id="printable-receipt" className="space-y-6 text-slate-900 bg-white p-6">
               {/* Receipt Header */}
               <div className="flex flex-col items-center text-center space-y-2 pb-6 border-b-2 border-dashed border-slate-200">
                 <div className="relative w-16 h-16 mb-1">
@@ -370,7 +370,6 @@ export default function SalesPage() {
                 <h2 className="text-xl font-black tracking-tighter uppercase text-slate-900">BizManager Official Store</h2>
                 <div className="space-y-0.5">
                   <p className="text-[10px] font-medium text-slate-600 uppercase tracking-tight">123 Innovation Drive, Tech City, TC 90210</p>
-                  <p className="text-[9px] text-slate-500">VAT ID: 98-76543210 • REG: 555-1234</p>
                   <p className="text-[9px] text-slate-500 font-mono">TEL: (555) 010-9988</p>
                 </div>
               </div>
@@ -378,7 +377,7 @@ export default function SalesPage() {
               {/* Transaction Meta */}
               <div className="grid grid-cols-2 gap-4 text-[10px] font-mono py-2 border-b border-slate-100">
                 <div className="space-y-1">
-                  <p className="font-bold text-slate-900 underline decoration-slate-200 underline-offset-2 uppercase">Billing Details</p>
+                  <p className="font-bold text-slate-900 uppercase">Billing Details</p>
                   <p>INV: #{currentSale?.invoiceNumber}</p>
                   <p>DATE: {currentSale?.date && new Date(currentSale.date).toLocaleDateString()}</p>
                 </div>
@@ -398,7 +397,7 @@ export default function SalesPage() {
                 </div>
                 <div className="space-y-1.5">
                   {currentSale?.items?.map((item: any, idx: number) => (
-                    <div key={idx} className="grid grid-cols-12 text-[10px] items-start px-1 group">
+                    <div key={idx} className="grid grid-cols-12 text-[10px] items-start px-1">
                       <div className="col-span-6 flex flex-col">
                         <span className="font-bold text-slate-800 uppercase leading-tight">{item.name}</span>
                         <span className="text-[8px] text-slate-400 font-mono">SKU: {item.sku || 'N/A'}</span>
@@ -413,32 +412,11 @@ export default function SalesPage() {
 
               {/* Totals Section */}
               <div className="pt-4 border-t-2 border-dashed border-slate-200 space-y-2">
-                <div className="flex justify-between text-[10px] text-slate-500 font-medium">
-                  <span>Subtotal</span>
-                  <span className="font-mono">${Number(currentSale?.totalAmount).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-[10px] text-slate-500 font-medium">
-                  <span>Tax (0.00%)</span>
-                  <span className="font-mono">$0.00</span>
-                </div>
-                <Separator className="bg-slate-100" />
                 <div className="flex justify-between items-center py-1">
                   <span className="text-[11px] font-black uppercase tracking-widest text-slate-900">Total Due</span>
                   <span className="text-xl font-black text-primary font-mono tracking-tighter">
                     ${Number(currentSale?.totalAmount).toFixed(2)}
                   </span>
-                </div>
-              </div>
-
-              {/* Payment Status */}
-              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 border-dashed space-y-1.5">
-                <div className="flex justify-between text-[9px] font-mono text-slate-500 uppercase font-bold">
-                  <span>Status</span>
-                  <span className="text-emerald-600">PAID IN FULL</span>
-                </div>
-                <div className="flex justify-between text-[8px] font-mono text-slate-400 uppercase">
-                  <span>TX REF</span>
-                  <span className="truncate max-w-[120px]">{currentSale?.id}</span>
                 </div>
               </div>
 
@@ -448,15 +426,7 @@ export default function SalesPage() {
                    <div className="w-24 border-t border-slate-300"></div>
                    <span className="text-[8px] uppercase font-bold text-slate-400 tracking-tighter">Authorized Signature</span>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-black text-slate-900 italic tracking-tight">"Your growth is our mission."</p>
-                  <p className="text-[9px] text-slate-400 font-medium uppercase tracking-widest">Thank you for visiting!</p>
-                </div>
-                <div className="flex justify-center pt-1">
-                  <div className="bg-slate-100 px-2 py-0.5 rounded text-[8px] font-mono text-slate-500 uppercase">
-                    System Verified • BizManager v1.0
-                  </div>
-                </div>
+                <p className="text-[9px] text-slate-400 font-medium uppercase tracking-widest">Thank you for visiting!</p>
               </div>
             </div>
           </div>
