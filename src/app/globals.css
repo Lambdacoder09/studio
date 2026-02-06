@@ -64,39 +64,49 @@
 }
 
 @media print {
+  /* Hide all elements on the page by default */
   body * {
     visibility: hidden !important;
   }
-  #printable-receipt, #printable-receipt * {
+
+  /* Specifically show the receipt and its children */
+  #printable-receipt, 
+  #printable-receipt * {
     visibility: visible !important;
   }
+
+  /* Position the receipt at the top left of the print page */
   #printable-receipt {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 80mm; /* Standard receipt width */
-    margin: 0 auto;
-    padding: 15px;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 80mm !important; /* Typical thermal printer width */
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
     border: none !important;
-    background: white !important;
-    color: black !important;
-    font-family: 'Courier New', Courier, monospace;
-  }
-  
-  /* Ensure images print */
-  #printable-receipt img {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
   }
 
-  /* Hide the modal overlay/buttons during print */
-  [role="dialog"] > button, 
-  [role="dialog"] .dialog-footer,
-  [data-radix-portal] > div[data-state="open"] {
-    display: none !important;
+  /* Reset some global layout settings for better print output */
+  html, body {
+    background: white !important;
+    width: 80mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
-  
-  [data-radix-portal] {
-    position: static !important;
+
+  /* Ensure background colors and images print correctly */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide common UI overlays that might interfere */
+  button, 
+  [role="dialog"] > button,
+  .dialog-footer,
+  [data-radix-portal] > div:not([role="dialog"]) {
+    display: none !important;
   }
 }
