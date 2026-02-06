@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Product": {
@@ -9,6 +10,10 @@
         "id": {
           "type": "string",
           "description": "Unique identifier for the Product entity."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "The UID of the user who owns this product."
         },
         "productName": {
           "type": "string",
@@ -37,6 +42,7 @@
       },
       "required": [
         "id",
+        "ownerId",
         "productName",
         "sku",
         "category",
@@ -54,6 +60,10 @@
         "id": {
           "type": "string",
           "description": "Unique identifier for the Sale entity."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "The UID of the user who owns this record."
         },
         "date": {
           "type": "string",
@@ -78,6 +88,7 @@
       },
       "required": [
         "id",
+        "ownerId",
         "date",
         "invoiceNumber",
         "totalAmount",
@@ -93,6 +104,10 @@
         "id": {
           "type": "string",
           "description": "Unique identifier for the Purchase entity."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "The UID of the user who owns this record."
         },
         "supplierName": {
           "type": "string",
@@ -118,6 +133,7 @@
       },
       "required": [
         "id",
+        "ownerId",
         "supplierName",
         "productId",
         "quantity",
@@ -134,6 +150,10 @@
         "id": {
           "type": "string",
           "description": "Unique identifier for the Expense entity."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "The UID of the user who owns this record."
         },
         "expenseName": {
           "type": "string",
@@ -155,6 +175,7 @@
       },
       "required": [
         "id",
+        "ownerId",
         "expenseName",
         "category",
         "amount",
@@ -235,6 +256,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the BizManager application's requirements for managing inventory, sales, purchases, and expenses for a small business. A top-level collection `products` stores the inventory. The `sales`, `purchases`, and `expenses` collections are stored at the top level for easy querying and reporting. Each document in the collection is owned by the user and thus uses path-based ownership, enabling secure list operations and simplified security rules. This design promotes Authorization Independence by avoiding hierarchical authorization dependencies, making the application easier to debug and scale."
+    "reasoning": "The Firestore structure is designed to support the BizManager application's requirements for managing inventory, sales, purchases, and expenses for a small business. A top-level collection `products` stores the inventory. The `sales`, `purchases`, and `expenses` collections are stored at the top level for easy querying and reporting. Each document in the collection is owned by the user and thus uses path-based ownership, enabling secure list operations and simplified security rules."
   }
 }
