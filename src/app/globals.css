@@ -69,45 +69,39 @@
     size: auto;
   }
 
-  /* Reset document flow entirely for print to prevent extra blank pages */
   html, body {
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
+    height: 100% !important;
+    overflow: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    visibility: hidden; /* Hide all by default */
   }
 
-  /* Only show the receipt */
-  #printable-receipt, 
-  #printable-receipt * {
-    visibility: visible;
+  /* Hide everything by default */
+  body > * {
+    display: none !important;
   }
-  
-  #printable-receipt {
+
+  /* Force the Radix Portal containing the Dialog to be visible and take full space */
+  body > [data-radix-portal] {
     display: block !important;
     position: absolute !important;
-    left: 0 !important;
     top: 0 !important;
+    left: 0 !important;
     width: 100% !important;
-    margin: 0 !important;
-    padding: 1.5cm !important; /* Standard print margins */
-    background: white !important;
-    box-shadow: none !important;
-    border: none !important;
-    /* Prevent page breaks inside the receipt content if possible */
-    page-break-after: avoid;
+    height: 100% !important;
+    overflow: visible !important;
   }
 
-  /* Kill all fixed position elements and overlays that cause blank space/extra pages */
-  [data-radix-portal],
-  [role="dialog"],
-  [role="presentation"],
-  div[data-state] {
+  /* Reset the Dialog Overlay and Content to be invisible/non-interfering, 
+     but allow the Receipt inside to be visible */
+  [data-radix-overlay],
+  [role="dialog"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
     position: static !important;
     transform: none !important;
     margin: 0 !important;
@@ -115,28 +109,34 @@
     width: 100% !important;
     max-width: none !important;
     height: auto !important;
-    max-height: none !important;
-    visibility: visible !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
     overflow: visible !important;
   }
 
-  /* Explicitly hide standard UI fluff */
-  [data-radix-overlay],
-  .fixed.inset-0,
-  button,
-  nav,
-  header {
+  /* The actual printable area */
+  #printable-receipt {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 1cm !important;
+    margin: 0 !important;
+    background: white !important;
+    page-break-after: avoid !important;
+  }
+
+  /* Hide UI elements inside the dialog that shouldn't print */
+  button, 
+  [role="dialog"] > button,
+  footer.print\:hidden {
     display: none !important;
   }
 
-  /* Remove any scroll limitations on print content */
-  [class*="overflow-"],
-  [class*="max-h-"] {
+  /* Ensure all nested elements are visible for printing */
+  #printable-receipt * {
+    visibility: visible !important;
     overflow: visible !important;
-    max-height: none !important;
-    height: auto !important;
   }
 }

@@ -355,10 +355,10 @@ export default function SalesPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="p-0 overflow-y-auto max-h-[85vh] print:overflow-visible print:max-h-none">
-            <div id="printable-receipt" className="space-y-8 text-slate-900 bg-white">
+            <div id="printable-receipt" className="space-y-6 text-slate-900 bg-white">
               {/* Receipt Header */}
-              <div className="flex flex-col items-center text-center space-y-3 pb-8 border-b-2 border-dashed border-slate-200">
-                <div className="relative w-24 h-24 mb-2">
+              <div className="flex flex-col items-center text-center space-y-2 pb-6 border-b-2 border-dashed border-slate-200">
+                <div className="relative w-16 h-16 mb-1">
                    <Image 
                     src={businessLogo} 
                     alt="BizManager Logo" 
@@ -367,41 +367,41 @@ export default function SalesPage() {
                     data-ai-hint="business logo"
                   />
                 </div>
-                <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-900">BizManager Official Store</h2>
-                <div className="space-y-1">
-                  <p className="text-[11px] font-medium text-slate-600 uppercase tracking-tight">123 Innovation Drive, Tech City, TC 90210</p>
-                  <p className="text-[10px] text-slate-500">VAT ID: 98-76543210 • REG: 555-1234</p>
-                  <p className="text-[10px] text-slate-500 font-mono">TEL: (555) 010-9988</p>
+                <h2 className="text-xl font-black tracking-tighter uppercase text-slate-900">BizManager Official Store</h2>
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-medium text-slate-600 uppercase tracking-tight">123 Innovation Drive, Tech City, TC 90210</p>
+                  <p className="text-[9px] text-slate-500">VAT ID: 98-76543210 • REG: 555-1234</p>
+                  <p className="text-[9px] text-slate-500 font-mono">TEL: (555) 010-9988</p>
                 </div>
               </div>
 
               {/* Transaction Meta */}
-              <div className="grid grid-cols-2 gap-4 text-xs font-mono py-4 border-b border-slate-100">
-                <div className="space-y-1.5">
-                  <p className="font-bold text-slate-900 underline decoration-slate-200 underline-offset-4 uppercase">Billing Details</p>
+              <div className="grid grid-cols-2 gap-4 text-[10px] font-mono py-2 border-b border-slate-100">
+                <div className="space-y-1">
+                  <p className="font-bold text-slate-900 underline decoration-slate-200 underline-offset-2 uppercase">Billing Details</p>
                   <p>INV: #{currentSale?.invoiceNumber}</p>
                   <p>DATE: {currentSale?.date && new Date(currentSale.date).toLocaleDateString()}</p>
                 </div>
-                <div className="text-right space-y-1.5 pt-5">
+                <div className="text-right space-y-1 pt-3">
                   <p>TIME: {currentSale?.date && new Date(currentSale.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   <p>CASHIER: {user?.email?.split('@')[0].toUpperCase() || 'SYS_ADMIN'}</p>
                 </div>
               </div>
 
               {/* Items Table */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-12 text-[10px] font-black uppercase text-slate-400 px-1 border-b pb-1">
+              <div className="space-y-2">
+                <div className="grid grid-cols-12 text-[9px] font-black uppercase text-slate-400 px-1 border-b pb-0.5">
                   <div className="col-span-6">Description</div>
                   <div className="col-span-2 text-center">Qty</div>
                   <div className="col-span-2 text-right">Unit</div>
                   <div className="col-span-2 text-right">Total</div>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-1.5">
                   {currentSale?.items?.map((item: any, idx: number) => (
-                    <div key={idx} className="grid grid-cols-12 text-[11px] items-start px-1 group">
+                    <div key={idx} className="grid grid-cols-12 text-[10px] items-start px-1 group">
                       <div className="col-span-6 flex flex-col">
                         <span className="font-bold text-slate-800 uppercase leading-tight">{item.name}</span>
-                        <span className="text-[9px] text-slate-400 font-mono">SKU: {item.sku || 'N/A'}</span>
+                        <span className="text-[8px] text-slate-400 font-mono">SKU: {item.sku || 'N/A'}</span>
                       </div>
                       <div className="col-span-2 text-center text-slate-600 font-mono">{item.quantity}</div>
                       <div className="col-span-2 text-right text-slate-600 font-mono">${item.price.toFixed(2)}</div>
@@ -412,48 +412,48 @@ export default function SalesPage() {
               </div>
 
               {/* Totals Section */}
-              <div className="pt-8 border-t-2 border-dashed border-slate-200 space-y-3">
-                <div className="flex justify-between text-xs text-slate-500 font-medium">
+              <div className="pt-4 border-t-2 border-dashed border-slate-200 space-y-2">
+                <div className="flex justify-between text-[10px] text-slate-500 font-medium">
                   <span>Subtotal</span>
                   <span className="font-mono">${Number(currentSale?.totalAmount).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-xs text-slate-500 font-medium">
+                <div className="flex justify-between text-[10px] text-slate-500 font-medium">
                   <span>Tax (0.00%)</span>
                   <span className="font-mono">$0.00</span>
                 </div>
                 <Separator className="bg-slate-100" />
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-sm font-black uppercase tracking-widest text-slate-900">Total Due</span>
-                  <span className="text-2xl font-black text-primary font-mono tracking-tighter">
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-[11px] font-black uppercase tracking-widest text-slate-900">Total Due</span>
+                  <span className="text-xl font-black text-primary font-mono tracking-tighter">
                     ${Number(currentSale?.totalAmount).toFixed(2)}
                   </span>
                 </div>
               </div>
 
               {/* Payment Status */}
-              <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 border-dashed space-y-2">
-                <div className="flex justify-between text-[10px] font-mono text-slate-500 uppercase font-bold">
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 border-dashed space-y-1.5">
+                <div className="flex justify-between text-[9px] font-mono text-slate-500 uppercase font-bold">
                   <span>Status</span>
                   <span className="text-emerald-600">PAID IN FULL</span>
                 </div>
-                <div className="flex justify-between text-[9px] font-mono text-slate-400 uppercase">
+                <div className="flex justify-between text-[8px] font-mono text-slate-400 uppercase">
                   <span>TX REF</span>
                   <span className="truncate max-w-[120px]">{currentSale?.id}</span>
                 </div>
               </div>
 
               {/* Footer */}
-              <div className="text-center space-y-6 pt-6">
+              <div className="text-center space-y-4 pt-4">
                 <div className="flex flex-col items-center gap-1">
-                   <div className="w-32 border-t border-slate-300"></div>
-                   <span className="text-[9px] uppercase font-bold text-slate-400 tracking-tighter">Authorized Signature</span>
+                   <div className="w-24 border-t border-slate-300"></div>
+                   <span className="text-[8px] uppercase font-bold text-slate-400 tracking-tighter">Authorized Signature</span>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-sm font-black text-slate-900 italic tracking-tight">"Your growth is our mission."</p>
-                  <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Thank you for visiting!</p>
+                <div className="space-y-1">
+                  <p className="text-xs font-black text-slate-900 italic tracking-tight">"Your growth is our mission."</p>
+                  <p className="text-[9px] text-slate-400 font-medium uppercase tracking-widest">Thank you for visiting!</p>
                 </div>
-                <div className="flex justify-center pt-2">
-                  <div className="bg-slate-100 px-3 py-1 rounded text-[9px] font-mono text-slate-500 uppercase">
+                <div className="flex justify-center pt-1">
+                  <div className="bg-slate-100 px-2 py-0.5 rounded text-[8px] font-mono text-slate-500 uppercase">
                     System Verified • BizManager v1.0
                   </div>
                 </div>
@@ -466,7 +466,7 @@ export default function SalesPage() {
               Close
             </Button>
             <Button className="flex-1 max-w-[140px] bg-primary text-white gap-2" onClick={handlePrint}>
-              <Printer className="h-4 w-4" /> Print Receipt
+              <Printer className="h-4 w-4" /> Print Document
             </Button>
           </DialogFooter>
         </DialogContent>
