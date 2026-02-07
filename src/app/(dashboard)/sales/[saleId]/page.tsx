@@ -2,7 +2,7 @@
 "use client"
 
 import { use } from "react"
-import { Printer, ArrowLeft, Loader2, Download } from "lucide-react"
+import { Printer, ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
@@ -107,6 +107,8 @@ export default function SaleReceiptPage({ params }: { params: Promise<{ saleId: 
                     <div className="col-span-5">
                       <p className="font-bold uppercase">{item.name}</p>
                       <p className="text-[9px] text-muted-foreground font-mono">SKU: {item.sku || 'N/A'}</p>
+                      <p className="text-[9px] text-muted-foreground font-mono">MFR: {item.manufacturer || 'N/A'}</p>
+                      <p className="text-[9px] text-muted-foreground font-mono">EXP: {item.expiryDate || 'N/A'}</p>
                     </div>
                     <div className="col-span-2 text-center font-mono">x{item.quantity}</div>
                     <div className="col-span-1 text-center font-mono">{item.gstRate}%</div>

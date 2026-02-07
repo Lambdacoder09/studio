@@ -24,35 +24,40 @@ service cloud.firestore {
     // --- Collection Rules ---
 
     match /products/{productId} {
-      allow get, list: if isOwner(resource.data.ownerId);
+      allow get: if isOwner(resource.data.ownerId);
+      allow list: if isSignedIn();
       allow create: if isOwner(request.resource.data.ownerId) && request.resource.data.id == productId;
       allow update: if isExistingOwner(resource.data.ownerId) && isUnchanged('ownerId');
       allow delete: if isExistingOwner(resource.data.ownerId);
     }
 
     match /sales/{saleId} {
-      allow get, list: if isOwner(resource.data.ownerId);
+      allow get: if isOwner(resource.data.ownerId);
+      allow list: if isSignedIn();
       allow create: if isOwner(request.resource.data.ownerId) && request.resource.data.id == saleId;
       allow update: if isExistingOwner(resource.data.ownerId) && isUnchanged('ownerId');
       allow delete: if isExistingOwner(resource.data.ownerId);
     }
 
     match /purchases/{purchaseId} {
-      allow get, list: if isOwner(resource.data.ownerId);
+      allow get: if isOwner(resource.data.ownerId);
+      allow list: if isSignedIn();
       allow create: if isOwner(request.resource.data.ownerId) && request.resource.data.id == purchaseId;
       allow update: if isExistingOwner(resource.data.ownerId) && isUnchanged('ownerId');
       allow delete: if isExistingOwner(resource.data.ownerId);
     }
 
     match /expenses/{expenseId} {
-      allow get, list: if isOwner(resource.data.ownerId);
+      allow get: if isOwner(resource.data.ownerId);
+      allow list: if isSignedIn();
       allow create: if isOwner(request.resource.data.ownerId) && request.resource.data.id == expenseId;
       allow update: if isExistingOwner(resource.data.ownerId) && isUnchanged('ownerId');
       allow delete: if isExistingOwner(resource.data.ownerId);
     }
 
     match /logs/{logId} {
-      allow get, list: if isOwner(resource.data.ownerId);
+      allow get: if isOwner(resource.data.ownerId);
+      allow list: if isSignedIn();
       allow create: if isOwner(request.resource.data.ownerId) && request.resource.data.id == logId;
       allow delete: if false; // Audit logs should not be deleted by users
       allow update: if false; // Audit logs should not be modified

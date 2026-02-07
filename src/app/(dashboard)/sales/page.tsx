@@ -22,6 +22,8 @@ interface CartItem {
   price: number;
   gstRate: number;
   gstAmount: number;
+  manufacturer: string;
+  expiryDate: string;
 }
 
 export default function SalesPage() {
@@ -90,7 +92,9 @@ export default function SalesPage() {
         quantity: 1, 
         price: Number(product.sellingPrice),
         gstRate: Number(product.gstRate),
-        gstAmount: gstAmount
+        gstAmount: gstAmount,
+        manufacturer: product.manufacturer,
+        expiryDate: product.expiryDate,
       }]
     })
   }

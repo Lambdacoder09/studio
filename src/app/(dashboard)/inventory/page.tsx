@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Search, Edit2, Trash2, MoreHorizontal, Loader2, X, PlusCircle } from "lucide-react"
+import { Plus, Search, Edit2, Trash2, MoreHorizontal, Loader2, X, PlusCircle, FileQuestion } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -47,7 +47,7 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
+import ExcelImportButton from "@/components/ui/excel-import-button"
 import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase"
 import { collection, query, where, doc } from "firebase/firestore"
 import { useForm, useFieldArray } from "react-hook-form"
@@ -63,6 +63,8 @@ const productSchema = z.object({
   sellingPrice: z.coerce.number().min(0, "Price must be positive"),
   gstRate: z.coerce.number(),
   currentQuantity: z.coerce.number().min(0, "Quantity must be positive"),
+  manufacturer: z.string().min(2, "Manufacturer is required"),
+  expiryDate: z.string().min(1, "Expiry date is required"),
 })
 
 const bulkAddSchema = z.object({
@@ -80,6 +82,8 @@ export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<any | null>(null)
+  const [isStructureInfoOpen, setIsStructureInfoOpen] = useState(false)
+
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -105,6 +109,8 @@ export default function InventoryPage() {
         sellingPrice: 0,
         gstRate: 5,
         currentQuantity: 0,
+        manufacturer: "",
+        expiryDate: "",
       }],
     },
   })
@@ -128,6 +134,8 @@ export default function InventoryPage() {
         sellingPrice: editingProduct.sellingPrice,
         gstRate: editingProduct.gstRate,
         currentQuantity: editingProduct.currentQuantity,
+        manufacturer: editingProduct.manufacturer,
+        expiryDate: editingProduct.expiryDate,
       })
     }
   }, [editingProduct, editForm])
@@ -136,6 +144,23 @@ export default function InventoryPage() {
     p.productName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.sku.toLowerCase().includes(searchTerm.toLowerCase())
   ) || []
+
+  const handleImport = (data: any[]) => {
+    const [header, ...rows] = data;
+    const products = rows.map(row => ({
+      productName: row[0],
+      sku: row[1],
+      category: row[2],
+      purchasePrice: row[3],
+      sellingPrice: row[4],
+      gstRate: row[5],
+      currentQuantity: row[6],
+      manufacturer: row[7],
+      expiryDate: row[8],
+    }));
+
+    onBulkAdd({ products });
+  };
 
   function onBulkAdd(values: BulkAddFormValues) {
     if (!user || !firestore) return
@@ -171,6 +196,8 @@ export default function InventoryPage() {
         sellingPrice: 0,
         gstRate: 5,
         currentQuantity: 0,
+        manufacturer: "",
+        expiryDate: "",
       }],
     })
     
@@ -240,9 +267,12 @@ export default function InventoryPage() {
           <p className="text-muted-foreground">Monitor and manage pharmaceutical stock and GST rates.</p>
         </div>
         
-        <Button className="bg-secondary hover:bg-secondary/90 text-white gap-2" onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="h-4 w-4" /> Add Products
-        </Button>
+        <div className="flex gap-2">
+          <ExcelImportButton onImport={handleImport} />
+          <Button className="bg-secondary hover:bg-secondary/90 text-white gap-2" onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="h-4 w-4" /> Add Products
+          </Button>
+        </div>
       </div>
 
       <Card className="border-none shadow-sm bg-white">
@@ -257,6 +287,10 @@ export default function InventoryPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            <Button variant="link" className="gap-2" onClick={() => setIsStructureInfoOpen(true)}>
+              <FileQuestion className="h-4 w-4" />
+              Required File Structure
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -267,6 +301,8 @@ export default function InventoryPage() {
                   <TableHead className="font-semibold">Product</TableHead>
                   <TableHead className="font-semibold">SKU</TableHead>
                   <TableHead className="font-semibold">Category</TableHead>
+                  <TableHead className="font-semibold">Manufacturer</TableHead>
+                  <TableHead className="font-semibold">Expiry Date</TableHead>
                   <TableHead className="font-semibold">GST %</TableHead>
                   <TableHead className="text-right font-semibold">Selling (Base)</TableHead>
                   <TableHead className="text-center font-semibold">Stock</TableHead>
@@ -276,7 +312,7 @@ export default function InventoryPage() {
               <TableBody>
                 {isDataLoading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
+                    <TableCell colSpan={9} className="h-24 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <span>Loading inventory...</span>
@@ -285,7 +321,7 @@ export default function InventoryPage() {
                   </TableRow>
                 ) : filteredProducts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
                       No products found.
                     </TableCell>
                   </TableRow>
@@ -297,6 +333,8 @@ export default function InventoryPage() {
                       <TableCell>
                         <Badge variant="secondary" className="font-normal">{product.category}</Badge>
                       </TableCell>
+                      <TableCell>{product.manufacturer}</TableCell>
+                      <TableCell>{product.expiryDate}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="font-mono">{product.gstRate}%</Badge>
                       </TableCell>
@@ -361,12 +399,12 @@ export default function InventoryPage() {
                       </Button>
                     )}
                     
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField
                         control={bulkAddForm.control}
                         name={`products.${index}.productName`}
                         render={({ field }) => (
-                          <FormItem className="md:col-span-2">
+                          <FormItem>
                             <FormLabel>Product Name</FormLabel>
                             <FormControl>
                               <Input placeholder="e.g. Paracetamol 500mg" {...field} />
@@ -396,6 +434,35 @@ export default function InventoryPage() {
                             <FormLabel>Category</FormLabel>
                             <FormControl>
                               <Input placeholder="Antibiotics" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={bulkAddForm.control}
+                        name={`products.${index}.manufacturer`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Manufacturer</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. Cipla" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={bulkAddForm.control}
+                        name={`products.${index}.expiryDate`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Expiry Date</FormLabel>
+                            <FormControl>
+                              <Input placeholder="MM/YYYY" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -484,6 +551,8 @@ export default function InventoryPage() {
                     sellingPrice: 0,
                     gstRate: 5,
                     currentQuantity: 0,
+                    manufacturer: "",
+                    expiryDate: "",
                   })}
                 >
                   <PlusCircle className="h-4 w-4" /> Add Another Row
@@ -546,6 +615,32 @@ export default function InventoryPage() {
                       <FormLabel>Category</FormLabel>
                       <FormControl>
                         <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="manufacturer"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Manufacturer</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="expiryDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Expiry Date</FormLabel>
+                      <FormControl>
+                        <Input placeholder="MM/YYYY" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -621,6 +716,47 @@ export default function InventoryPage() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isStructureInfoOpen} onOpenChange={setIsStructureInfoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excel File Structure</DialogTitle>
+            <DialogDescription>
+              Your Excel file should have the following columns in this exact order:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>productName</TableHead>
+                  <TableHead>sku</TableHead>
+                  <TableHead>category</TableHead>
+                  <TableHead>purchasePrice</TableHead>
+                  <TableHead>sellingPrice</TableHead>
+                  <TableHead>gstRate</TableHead>
+                  <TableHead>currentQuantity</TableHead>
+                  <TableHead>manufacturer</TableHead>
+                  <TableHead>expiryDate</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell>Paracetamol 500mg</TableCell>
+                  <TableCell>PC500</TableCell>
+                  <TableCell>Painkiller</TableCell>
+                  <TableCell>10.50</TableCell>
+                  <TableCell>15.00</TableCell>
+                  <TableCell>5</TableCell>
+                  <TableCell>100</TableCell>
+                  <TableCell>Cipla</TableCell>
+                  <TableCell>12/2025</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
