@@ -7,6 +7,13 @@ import { ShoppingCart, Plus, Receipt, Search, Trash2, FileText, Loader2, Package
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase"
@@ -34,6 +41,7 @@ export default function SalesPage() {
   
   const [view, setView] = useState<"history" | "new">("history")
   const [searchTerm, setSearchTerm] = useState("")
+  const [searchFilter, setSearchFilter] = useState("productName")
   const [cart, setCart] = useState<CartItem[]>([])
 
   const productsQuery = useMemoFirebase(() => {
@@ -50,10 +58,20 @@ export default function SalesPage() {
   
   const salesHistory = rawSalesHistory ? [...rawSalesHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) : []
 
-  const filteredProducts = products?.filter(p => 
-    p.productName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || []
+  const filteredProducts = products?.filter(p => {
+    if (!searchTerm) return true
+    const term = searchTerm.toLowerCase()
+    switch (searchFilter) {
+      case 'productName':
+        return p.productName.toLowerCase().includes(term)
+      case 'sku':
+        return p.sku.toLowerCase().includes(term)
+      case 'category':
+        return p.category.toLowerCase().includes(term)
+      default:
+        return false
+    }
+  }) || []
 
   const cartSubtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   const cartTax = cart.reduce((sum, item) => sum + item.gstAmount, 0)
@@ -244,14 +262,26 @@ export default function SalesPage() {
               <CardDescription>Select products. GST will be calculated automatically.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search products..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+              <div className="flex items-center gap-2">
+                <div className="relative w-full">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={`Search by ${searchFilter === 'productName' ? 'name' : searchFilter}...`}
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Select value={searchFilter} onValueChange={setSearchFilter}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Search by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="productName">Name</SelectItem>
+                    <SelectItem value="sku">SKU</SelectItem>
+                    <SelectItem value="category">Category</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {isProductsLoading ? (
